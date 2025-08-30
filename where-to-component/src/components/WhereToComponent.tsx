@@ -355,108 +355,111 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
         '--where-gutter-m': '24px',
       } as React.CSSProperties}
     >
-      <div className="where-to__container w-full px-4">
+      {/* Heading with 3rem left margin */}
+      <div className="where-to__heading-container" style={{ marginLeft: '3rem' }}>
         <h2 id="where-to-heading" className="where-to__heading mb-6 lg:mb-8">
           <span className="where-to__heading-prefix block text-where-heading-m lg:text-where-heading-d font-light tracking-wide text-where-active uppercase leading-none">
             WHERE TO
           </span>
-          
-          {/* Tab Viewport Container */}
-          <div 
-            ref={tabViewportRef}
-            className="where-to__tab-viewport w-full mt-2"
-            style={{ 
-              position: 'relative',
-              overflow: 'hidden',
-              paddingLeft: '200px', // Add padding to prevent clipping of translated content
-              marginLeft: '-200px' // Offset the padding to maintain visual alignment
-            }}
-          >
-            <nav 
-              ref={tabSliderRef}
-              className="where-to__tab-slider flex flex-nowrap items-baseline will-change-transform" 
-              role="tablist" 
-              aria-label="Where To Categories"
-              style={{ 
-                transform: 'translateX(0px)',
-                position: 'relative'
-              }}
-            >
-              {/* Duplicate tabs at the beginning for circular navigation */}
-              {venueData.map((category) => (
-                <button
-                  key={`prev-${category.id}`}
-                  role="tab"
-                  aria-selected={false}
-                  aria-controls={`panel-${category.id}`}
-                  tabIndex={-1}
-                  className={cn(
-                    "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
-                    "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
-                    "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
-                    "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
-                    category.id === activeTab 
-                      ? "text-where-active hover:text-where-active" 
-                      : "text-where-inactive hover:text-where-active"
-                  )}
-                  onClick={() => handleTabClick(category.id as TabId)}
-                >
-                  {category.label}
-                </button>
-              ))}
-              
-              {/* Main tabs sequence */}
-              {venueData.map((category) => (
-                <button
-                  key={category.id}
-                  ref={(el) => { tabRefs.current[category.id] = el; }}
-                  role="tab"
-                  id={`tab-${category.id}`}
-                  aria-selected={category.id === activeTab}
-                  aria-controls={`panel-${category.id}`}
-                  tabIndex={category.id === activeTab ? 0 : -1}
-                  className={cn(
-                    "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
-                    "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
-                    "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
-                    "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
-                    category.id === activeTab 
-                      ? "text-where-active hover:text-where-active" 
-                      : "text-where-inactive hover:text-where-active"
-                  )}
-                  onClick={() => handleTabClick(category.id as TabId)}
-                  onKeyDown={(e) => handleKeyDown(e, category.id as TabId)}
-                >
-                  {category.label}
-                </button>
-              ))}
-              
-              {/* Duplicate tabs at the end for circular navigation */}
-              {venueData.map((category) => (
-                <button
-                  key={`next-${category.id}`}
-                  role="tab"
-                  aria-selected={false}
-                  aria-controls={`panel-${category.id}`}
-                  tabIndex={-1}
-                  className={cn(
-                    "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
-                    "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
-                    "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
-                    "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
-                    category.id === activeTab 
-                      ? "text-where-active hover:text-where-active" 
-                      : "text-where-inactive hover:text-where-active"
-                  )}
-                  onClick={() => handleTabClick(category.id as TabId)}
-                >
-                  {category.label}
-                </button>
-              ))}
-            </nav>
-          </div>
         </h2>
+      </div>
 
+      {/* Tab Viewport Container - Full width, extends to right edge */}
+      <div 
+        ref={tabViewportRef}
+        className="where-to__tab-viewport w-full mt-2"
+        style={{ 
+          position: 'relative',
+          overflow: 'hidden',
+          paddingLeft: '3rem', // Start tabs at 3rem from left
+        }}
+      >
+        <nav 
+          ref={tabSliderRef}
+          className="where-to__tab-slider flex flex-nowrap items-baseline will-change-transform" 
+          role="tablist" 
+          aria-label="Where To Categories"
+          style={{ 
+            transform: 'translateX(0px)',
+            position: 'relative'
+          }}
+        >
+          {/* Duplicate tabs at the beginning for circular navigation */}
+          {venueData.map((category) => (
+            <button
+              key={`prev-${category.id}`}
+              role="tab"
+              aria-selected={false}
+              aria-controls={`panel-${category.id}`}
+              tabIndex={-1}
+              className={cn(
+                "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+                "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
+                "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
+                "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
+                category.id === activeTab 
+                  ? "text-where-active hover:text-where-active" 
+                  : "text-where-inactive hover:text-where-active"
+              )}
+              onClick={() => handleTabClick(category.id as TabId)}
+            >
+              {category.label}
+            </button>
+          ))}
+          
+          {/* Main tabs sequence */}
+          {venueData.map((category) => (
+            <button
+              key={category.id}
+              ref={(el) => { tabRefs.current[category.id] = el; }}
+              role="tab"
+              id={`tab-${category.id}`}
+              aria-selected={category.id === activeTab}
+              aria-controls={`panel-${category.id}`}
+              tabIndex={category.id === activeTab ? 0 : -1}
+              className={cn(
+                "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+                "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
+                "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
+                "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
+                category.id === activeTab 
+                  ? "text-where-active hover:text-where-active" 
+                  : "text-where-inactive hover:text-where-active"
+              )}
+              onClick={() => handleTabClick(category.id as TabId)}
+              onKeyDown={(e) => handleKeyDown(e, category.id as TabId)}
+            >
+              {category.label}
+            </button>
+          ))}
+          
+          {/* Duplicate tabs at the end for circular navigation */}
+          {venueData.map((category) => (
+            <button
+              key={`next-${category.id}`}
+              role="tab"
+              aria-selected={false}
+              aria-controls={`panel-${category.id}`}
+              tabIndex={-1}
+              className={cn(
+                "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+                "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
+                "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
+                "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
+                category.id === activeTab 
+                  ? "text-where-active hover:text-where-active" 
+                  : "text-where-inactive hover:text-where-active"
+              )}
+              onClick={() => handleTabClick(category.id as TabId)}
+            >
+              {category.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Divider and content with 3rem left margin */}
+      <div className="where-to__content-container" style={{ marginLeft: '3rem' }}>
         <hr className="where-to__divider border-0 border-t border-where-divider my-6 lg:my-8" />
 
         <div 
