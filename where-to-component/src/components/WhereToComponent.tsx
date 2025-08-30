@@ -105,13 +105,13 @@ export default function WhereToComponent() {
         '--where-gutter-m': '24px',
       } as React.CSSProperties}
     >
-      <div className="where-to__container max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="where-to__container w-full px-4">
         <h2 id="where-to-heading" className="where-to__heading mb-6 lg:mb-8">
           <span className="where-to__heading-prefix block text-where-heading-m lg:text-where-heading-d font-light tracking-wide text-where-active uppercase leading-none">
             WHERE TO
           </span>
           <nav 
-            className="where-to__tablist inline-block mt-2" 
+            className="where-to__tablist flex flex-nowrap items-baseline gap-4 mt-2 overflow-x-auto" 
             role="tablist" 
             aria-label="Where To Categories"
           >
@@ -124,7 +124,7 @@ export default function WhereToComponent() {
               tabIndex={0}
               className={cn(
                 "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none",
-                "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
+                "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200 flex-shrink-0",
                 "text-where-active hover:text-where-active focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2"
               )}
               onClick={() => handleTabClick(activeCategory?.id as TabId)}
@@ -143,7 +143,7 @@ export default function WhereToComponent() {
                 aria-controls={`panel-${category.id}`}
                 tabIndex={-1}
                 className={cn(
-                  "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none ml-4",
+                  "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
                   "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
                   "text-where-inactive hover:text-where-active focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2"
                 )}
