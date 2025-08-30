@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+  
+  body {
+    background-color: white;
+    color: #1a1a1a;
+  }
+}
+
+/* Custom CSS for WHERE TO component */
+.where-to {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Responsive grid areas for tablet layout */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .where-to__row {
+    grid-template-areas:
+      "thumb title"
+      "thumb desc";
+    row-gap: 0.5rem;
+  }
+  
+  .where-to__thumb {
+    grid-area: thumb;
+  }
+  
+  .where-to__item-title {
+    grid-area: title;
+    align-self: end;
+  }
+  
+  .where-to__item-desc {
+    grid-area: desc;
+    align-self: start;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .where-to__panel {
+    transition: opacity 140ms linear !important;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus styles for better accessibility */
+.where-to__tab:focus-visible {
+  outline: 2px solid var(--where-color-active);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* Ensure proper contrast for accessibility */
+.where-to__tab[aria-selected="false"]:hover {
+  color: rgba(139, 69, 19, 0.7);
+}
+
+/* Smooth transitions for panel changes */
+.where-to__panels[aria-busy="true"] {
+  pointer-events: none;
+}
