@@ -63,7 +63,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     // Adjust based on which set we're targeting
     switch (useSet) {
       case 'prev':
-        return -(translateX); // First duplicate set (no offset)
+        return -translateX; // First duplicate set (no offset)
       case 'main':
         return -(translateX + oneSetWidth); // Main set (offset by one set)
       case 'next':
@@ -248,15 +248,18 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     const initializeTabs = () => {
       calculateTabWidths();
       if (tabSliderRef.current) {
+        // Set initial position without animation to prevent visual jump
+        const initialTranslation = calculateTabTranslation(activeTab);
         gsap.set(tabSliderRef.current, { 
-          x: calculateTabTranslation(activeTab),
+          x: initialTranslation,
           willChange: 'transform'
         });
       }
     };
 
-    // Initialize after a short delay to ensure DOM is ready
-    const timer = setTimeout(initializeTabs, 100);
+    // Initialize immediately, then with a small delay to ensure DOM measurements are accurate
+    initializeTabs();
+    const timer = setTimeout(initializeTabs, 50);
     
     const handleResize = () => {
       calculateTabWidths();
@@ -361,14 +364,23 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           {/* Tab Viewport Container */}
           <div 
             ref={tabViewportRef}
-            className="where-to__tab-viewport overflow-hidden w-full mt-2"
+            className="where-to__tab-viewport w-full mt-2"
+            style={{ 
+              position: 'relative',
+              overflow: 'hidden',
+              paddingLeft: '200px', // Add padding to prevent clipping of translated content
+              marginLeft: '-200px' // Offset the padding to maintain visual alignment
+            }}
           >
             <nav 
               ref={tabSliderRef}
               className="where-to__tab-slider flex flex-nowrap items-baseline will-change-transform" 
               role="tablist" 
               aria-label="Where To Categories"
-              style={{ transform: 'translateX(0px)' }}
+              style={{ 
+                transform: 'translateX(0px)',
+                position: 'relative'
+              }}
             >
               {/* Duplicate tabs at the beginning for circular navigation */}
               {venueData.map((category) => (
