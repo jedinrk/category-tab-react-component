@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import Image from 'next/image';
 import { gsap } from 'gsap';
 import { useWhereToStore } from '@/lib/store';
@@ -8,7 +8,14 @@ import { venueData } from '@/data/venues';
 import { TabId } from '@/types';
 import { cn } from '@/lib/utils';
 
-export default function WhereToComponent() {
+// Define the ref interface for external access
+export interface WhereToComponentRef {
+  nextTab: () => void;
+  prevTab: () => void;
+  goToTab: (tabId: TabId) => void;
+}
+
+const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   const { activeTab, setActiveTab } = useWhereToStore();
   const panelRefs = useRef<{ [key: string]: HTMLElement | null }>({});
   const containerRef = useRef<HTMLDivElement>(null);
@@ -31,8 +38,8 @@ export default function WhereToComponent() {
     });
   }, []);
 
-  // Calculate the translation needed to position active tab on the left
-  const calculateTabTranslation = useCallback((targetTabId: TabId) => {
+  // Calculate the translation needed to position active tab on the left with circular support
+  const calculateTabTranslation = useCallback((targetTabId: TabId, useSet: 'main' | 'prev' | 'next' = 'main') => {
     const targetIndex = venueData.findIndex(cat => cat.id === targetTabId);
     let translateX = 0;
     
@@ -44,10 +51,29 @@ export default function WhereToComponent() {
       translateX += tabWidth + marginRight;
     }
     
-    return -translateX;
+    // Calculate total width of one complete set of tabs
+    let oneSetWidth = 0;
+    for (let i = 0; i < venueData.length; i++) {
+      const tabId = venueData[i].id;
+      const tabWidth = tabWidths.current[tabId] || 0;
+      const marginRight = window.innerWidth >= 1024 ? 60 : window.innerWidth >= 768 ? 40 : 30;
+      oneSetWidth += tabWidth + marginRight;
+    }
+    
+    // Adjust based on which set we're targeting
+    switch (useSet) {
+      case 'prev':
+        return -(translateX); // First duplicate set (no offset)
+      case 'main':
+        return -(translateX + oneSetWidth); // Main set (offset by one set)
+      case 'next':
+        return -(translateX + (oneSetWidth * 2)); // Last duplicate set (offset by two sets)
+      default:
+        return -(translateX + oneSetWidth);
+    }
   }, []);
 
-  // Handle tab activation with GSAP animation
+  // Handle tab activation with seamless infinite scroll animation
   const handleTabClick = useCallback((tabId: TabId) => {
     if (tabId === activeTab || isTransitioning.current) return;
     
@@ -58,6 +84,15 @@ export default function WhereToComponent() {
     if (containerRef.current) {
       containerRef.current.setAttribute('aria-busy', 'true');
     }
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const currentIndex = venueData.findIndex(cat => cat.id === activeTab);
+    const targetIndex = venueData.findIndex(cat => cat.id === tabId);
+    
+    // Detect if this is a circular transition (last to first or first to last)
+    const isLastToFirst = currentIndex === venueData.length - 1 && targetIndex === 0;
+    const isFirstToLast = currentIndex === 0 && targetIndex === venueData.length - 1;
+    const isCircularTransition = isLastToFirst || isFirstToLast;
 
     // Create timeline for both tab scroll and content transition
     const tl = gsap.timeline({
@@ -70,11 +105,36 @@ export default function WhereToComponent() {
       }
     });
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
-    // Animate tab horizontal scroll
-    if (tabSliderRef.current) {
-      const translateX = calculateTabTranslation(tabId);
+    if (tabSliderRef.current && isCircularTransition) {
+      // Handle seamless infinite scroll for circular transitions
+      let intermediateTranslateX: number;
+      let finalTranslateX: number;
+
+      if (isLastToFirst) {
+        // Animate to the duplicate "DINE + SIP" in the next set (smooth forward scroll)
+        intermediateTranslateX = calculateTabTranslation(tabId, 'next');
+        finalTranslateX = calculateTabTranslation(tabId, 'main');
+      } else {
+        // isFirstToLast - Animate to the duplicate "MOVE + PLAY" in the prev set (smooth backward scroll)
+        intermediateTranslateX = calculateTabTranslation(tabId, 'prev');
+        finalTranslateX = calculateTabTranslation(tabId, 'main');
+      }
+
+      // Step 1: Animate to the duplicate tab (visible smooth transition)
+      tl.to(tabSliderRef.current, {
+        x: intermediateTranslateX,
+        duration: prefersReducedMotion ? 0.2 : 0.6,
+        ease: "power2.out"
+      }, 0);
+
+      // Step 2: Instantly reset to the main tab position (invisible)
+      tl.set(tabSliderRef.current, {
+        x: finalTranslateX
+      }, prefersReducedMotion ? 0.2 : 0.6);
+
+    } else {
+      // Normal tab transition (non-circular)
+      const translateX = calculateTabTranslation(tabId, 'main');
       tl.to(tabSliderRef.current, {
         x: translateX,
         duration: prefersReducedMotion ? 0.2 : 0.6,
@@ -215,6 +275,38 @@ export default function WhereToComponent() {
     };
   }, [activeTab, calculateTabWidths, calculateTabTranslation, animateTabsHorizontally, addTouchSupport]);
 
+  // Circular navigation methods
+  const nextTab = useCallback(() => {
+    if (isTransitioning.current) return;
+    
+    const currentIndex = venueData.findIndex(cat => cat.id === activeTab);
+    const nextIndex = (currentIndex + 1) % venueData.length;
+    const nextTabId = venueData[nextIndex].id as TabId;
+    
+    handleTabClick(nextTabId);
+  }, [activeTab, handleTabClick]);
+
+  const prevTab = useCallback(() => {
+    if (isTransitioning.current) return;
+    
+    const currentIndex = venueData.findIndex(cat => cat.id === activeTab);
+    const prevIndex = (currentIndex - 1 + venueData.length) % venueData.length;
+    const prevTabId = venueData[prevIndex].id as TabId;
+    
+    handleTabClick(prevTabId);
+  }, [activeTab, handleTabClick]);
+
+  const goToTab = useCallback((tabId: TabId) => {
+    handleTabClick(tabId);
+  }, [handleTabClick]);
+
+  // Expose methods through ref
+  useImperativeHandle(ref, () => ({
+    nextTab,
+    prevTab,
+    goToTab
+  }), [nextTab, prevTab, goToTab]);
+
   // Handle keyboard navigation
   const handleKeyDown = (event: React.KeyboardEvent, tabId: TabId) => {
     const tabs = venueData.map(cat => cat.id);
@@ -278,7 +370,30 @@ export default function WhereToComponent() {
               aria-label="Where To Categories"
               style={{ transform: 'translateX(0px)' }}
             >
-              {/* All tabs in order */}
+              {/* Duplicate tabs at the beginning for circular navigation */}
+              {venueData.map((category) => (
+                <button
+                  key={`prev-${category.id}`}
+                  role="tab"
+                  aria-selected={false}
+                  aria-controls={`panel-${category.id}`}
+                  tabIndex={-1}
+                  className={cn(
+                    "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+                    "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
+                    "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
+                    "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
+                    category.id === activeTab 
+                      ? "text-where-active hover:text-where-active" 
+                      : "text-where-inactive hover:text-where-active"
+                  )}
+                  onClick={() => handleTabClick(category.id as TabId)}
+                >
+                  {category.label}
+                </button>
+              ))}
+              
+              {/* Main tabs sequence */}
               {venueData.map((category) => (
                 <button
                   key={category.id}
@@ -299,6 +414,29 @@ export default function WhereToComponent() {
                   )}
                   onClick={() => handleTabClick(category.id as TabId)}
                   onKeyDown={(e) => handleKeyDown(e, category.id as TabId)}
+                >
+                  {category.label}
+                </button>
+              ))}
+              
+              {/* Duplicate tabs at the end for circular navigation */}
+              {venueData.map((category) => (
+                <button
+                  key={`next-${category.id}`}
+                  role="tab"
+                  aria-selected={false}
+                  aria-controls={`panel-${category.id}`}
+                  tabIndex={-1}
+                  className={cn(
+                    "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+                    "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
+                    "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
+                    "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
+                    category.id === activeTab 
+                      ? "text-where-active hover:text-where-active" 
+                      : "text-where-inactive hover:text-where-active"
+                  )}
+                  onClick={() => handleTabClick(category.id as TabId)}
                 >
                   {category.label}
                 </button>
@@ -363,4 +501,8 @@ export default function WhereToComponent() {
       </div>
     </section>
   );
-}
+});
+
+WhereToComponent.displayName = 'WhereToComponent';
+
+export default WhereToComponent;
