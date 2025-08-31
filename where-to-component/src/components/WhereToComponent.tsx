@@ -42,12 +42,13 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   const calculateTabTranslation = useCallback((targetTabId: TabId, useSet: 'main' | 'prev' | 'next' = 'main') => {
     const targetIndex = venueData.findIndex(cat => cat.id === targetTabId);
     let translateX = 0;
+    const alignmentGuard = 2; // small right shift to avoid glyph clipping on the left edge
     
     // Calculate cumulative width of tabs before the target tab
     for (let i = 0; i < targetIndex; i++) {
       const tabId = venueData[i].id;
       const tabWidth = tabWidths.current[tabId] || 0;
-      const marginRight = window.innerWidth >= 1024 ? 60 : window.innerWidth >= 768 ? 40 : 30;
+      const marginRight = window.innerWidth >= 1024 ? 60 : window.innerWidth >= 768 ? 40 : 32;
       translateX += tabWidth + marginRight;
     }
     
@@ -56,20 +57,20 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     for (let i = 0; i < venueData.length; i++) {
       const tabId = venueData[i].id;
       const tabWidth = tabWidths.current[tabId] || 0;
-      const marginRight = window.innerWidth >= 1024 ? 60 : window.innerWidth >= 768 ? 40 : 30;
+      const marginRight = window.innerWidth >= 1024 ? 60 : window.innerWidth >= 768 ? 40 : 32;
       oneSetWidth += tabWidth + marginRight;
     }
     
     // Adjust based on which set we're targeting
     switch (useSet) {
       case 'prev':
-        return -translateX; // First duplicate set (no offset)
+        return -translateX + alignmentGuard; // First duplicate set (no offset)
       case 'main':
-        return -(translateX + oneSetWidth); // Main set (offset by one set)
+        return -(translateX + oneSetWidth) + alignmentGuard; // Main set (offset by one set)
       case 'next':
-        return -(translateX + (oneSetWidth * 2)); // Last duplicate set (offset by two sets)
+        return -(translateX + (oneSetWidth * 2)) + alignmentGuard; // Last duplicate set (offset by two sets)
       default:
-        return -(translateX + oneSetWidth);
+        return -(translateX + oneSetWidth) + alignmentGuard;
     }
   }, []);
 
@@ -112,12 +113,12 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
 
       if (isLastToFirst) {
         // Animate to the duplicate "DINE + SIP" in the next set (smooth forward scroll)
-        intermediateTranslateX = calculateTabTranslation(tabId, 'next');
-        finalTranslateX = calculateTabTranslation(tabId, 'main');
+        intermediateTranslateX = Math.round(calculateTabTranslation(tabId, 'next'));
+        finalTranslateX = Math.round(calculateTabTranslation(tabId, 'main'));
       } else {
         // isFirstToLast - Animate to the duplicate "MOVE + PLAY" in the prev set (smooth backward scroll)
-        intermediateTranslateX = calculateTabTranslation(tabId, 'prev');
-        finalTranslateX = calculateTabTranslation(tabId, 'main');
+        intermediateTranslateX = Math.round(calculateTabTranslation(tabId, 'prev'));
+        finalTranslateX = Math.round(calculateTabTranslation(tabId, 'main'));
       }
 
       // Step 1: Animate to the duplicate tab (visible smooth transition)
@@ -134,7 +135,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
 
     } else {
       // Normal tab transition (non-circular)
-      const translateX = calculateTabTranslation(tabId, 'main');
+      const translateX = Math.round(calculateTabTranslation(tabId, 'main'));
       tl.to(tabSliderRef.current, {
         x: translateX,
         duration: prefersReducedMotion ? 0.2 : 0.6,
@@ -165,7 +166,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   const animateTabsHorizontally = useCallback((targetTabId: TabId) => {
     if (!tabSliderRef.current) return;
     
-    const translateX = calculateTabTranslation(targetTabId);
+    const translateX = Math.round(calculateTabTranslation(targetTabId));
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     
     gsap.to(tabSliderRef.current, {
@@ -249,7 +250,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       calculateTabWidths();
       if (tabSliderRef.current) {
         // Set initial position without animation to prevent visual jump
-        const initialTranslation = calculateTabTranslation(activeTab);
+        const initialTranslation = Math.round(calculateTabTranslation(activeTab));
         gsap.set(tabSliderRef.current, { 
           x: initialTranslation,
           willChange: 'transform'
@@ -355,8 +356,9 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
         '--where-gutter-m': '24px',
       } as React.CSSProperties}
     >
+      <div className="where-to__inner" style={{ paddingLeft: '3rem' }}>
       {/* Heading with 3rem left margin */}
-      <div className="where-to__heading-container" style={{ marginLeft: '3rem' }}>
+      <div className="where-to__heading-container">
         <h2 id="where-to-heading" className="where-to__heading mb-6 lg:mb-8">
           <span className="where-to__heading-prefix block text-where-heading-m lg:text-where-heading-d font-light tracking-wide text-where-active uppercase leading-none">
             WHERE TO
@@ -371,7 +373,8 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
         style={{ 
           position: 'relative',
           overflow: 'hidden',
-          paddingLeft: '3rem', // Start tabs at 3rem from left
+          marginLeft: '-3rem',
+          paddingLeft: '3rem'
         }}
       >
         <nav 
@@ -380,7 +383,6 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           role="tablist" 
           aria-label="Where To Categories"
           style={{ 
-            transform: 'translateX(0px)',
             position: 'relative'
           }}
         >
@@ -395,7 +397,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
               className={cn(
                 "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
                 "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
-                "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
+                "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
                 "focus:outline-none",
                 category.id === activeTab 
                   ? "text-where-active hover:text-where-active" 
@@ -420,7 +422,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
               className={cn(
                 "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
                 "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
-                "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
+                "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
                 "focus:outline-none",
                 category.id === activeTab 
                   ? "text-where-active hover:text-where-active" 
@@ -444,7 +446,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
               className={cn(
                 "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
                 "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
-                "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
+                "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
                 "focus:outline-none",
                 category.id === activeTab 
                   ? "text-where-active hover:text-where-active" 
@@ -459,7 +461,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       </div>
 
       {/* Divider and content with 3rem left margin */}
-      <div className="where-to__content-container" style={{ marginLeft: '3rem' }}>
+      <div className="where-to__content-container">
         <hr className="where-to__divider border-0 border-t border-where-divider my-6 lg:my-8" />
 
         <div 
@@ -514,6 +516,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           ))}
         </div>
       </div>
+    </div>
     </section>
   );
 });
