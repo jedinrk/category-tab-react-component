@@ -25,9 +25,15 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   const isTransitioning = useRef(false);
   const tabWidths = useRef<{ [key: string]: number }>({});
   const [isMobile, setIsMobile] = useState(false);
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const carouselTrackRef = useRef<HTMLDivElement>(null);
+  const autoSlideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const activeCategory = venueData.find(category => category.id === activeTab);
   const inactiveCategories = venueData.filter(category => category.id !== activeTab);
+  const activeCategoryItems = activeCategory?.items || [];
 
   // Mobile detection hook
   useEffect(() => {
@@ -45,6 +51,86 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       window.removeEventListener('resize', checkMobile);
     };
   }, []);
+
+  // Auto-slide functionality for mobile carousel
+  const startAutoSlide = useCallback(() => {
+    if (!isMobile || isCarouselPaused || activeCategoryItems.length <= 1) return;
+    
+    if (autoSlideTimerRef.current) {
+      clearInterval(autoSlideTimerRef.current);
+    }
+    
+    autoSlideTimerRef.current = setInterval(() => {
+      setCurrentCarouselIndex(prevIndex => {
+        const nextIndex = (prevIndex + 1) % activeCategoryItems.length;
+        return nextIndex;
+      });
+    }, 4000); // 4 second intervals
+  }, [isMobile, isCarouselPaused, activeCategoryItems.length]);
+
+  const stopAutoSlide = useCallback(() => {
+    if (autoSlideTimerRef.current) {
+      clearInterval(autoSlideTimerRef.current);
+      autoSlideTimerRef.current = null;
+    }
+  }, []);
+
+  const pauseAutoSlide = useCallback(() => {
+    setIsCarouselPaused(true);
+    stopAutoSlide();
+  }, [stopAutoSlide]);
+
+  const resumeAutoSlide = useCallback(() => {
+    setIsCarouselPaused(false);
+  }, []);
+
+  // Carousel navigation functions
+  const goToCarouselItem = useCallback((index: number) => {
+    if (!isMobile || !carouselTrackRef.current) return;
+    
+    const itemWidth = window.innerWidth * 0.85; // 85% of viewport width
+    const gap = window.innerWidth * 0.02; // 2% gap
+    const totalItemWidth = itemWidth + gap;
+    
+    // Calculate position including duplicates (we'll add 3 items at the start for infinite loop)
+    const translateX = -((index + 3) * totalItemWidth);
+    
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    gsap.to(carouselTrackRef.current, {
+      x: translateX,
+      duration: prefersReducedMotion ? 0.2 : 0.6,
+      ease: "power2.out",
+      onComplete: () => {
+        // Handle infinite loop reset
+        if (index >= activeCategoryItems.length) {
+          // Reset to beginning
+          const resetIndex = index % activeCategoryItems.length;
+          const resetTranslateX = -((resetIndex + 3) * totalItemWidth);
+          gsap.set(carouselTrackRef.current, { x: resetTranslateX });
+          setCurrentCarouselIndex(resetIndex);
+        } else if (index < 0) {
+          // Reset to end
+          const resetIndex = activeCategoryItems.length + index;
+          const resetTranslateX = -((resetIndex + 3) * totalItemWidth);
+          gsap.set(carouselTrackRef.current, { x: resetTranslateX });
+          setCurrentCarouselIndex(resetIndex);
+        }
+      }
+    });
+  }, [isMobile, activeCategoryItems.length]);
+
+  const nextCarouselItem = useCallback(() => {
+    const nextIndex = (currentCarouselIndex + 1) % activeCategoryItems.length;
+    setCurrentCarouselIndex(nextIndex);
+    goToCarouselItem(nextIndex);
+  }, [currentCarouselIndex, activeCategoryItems.length, goToCarouselItem]);
+
+  const prevCarouselItem = useCallback(() => {
+    const prevIndex = (currentCarouselIndex - 1 + activeCategoryItems.length) % activeCategoryItems.length;
+    setCurrentCarouselIndex(prevIndex);
+    goToCarouselItem(prevIndex);
+  }, [currentCarouselIndex, activeCategoryItems.length, goToCarouselItem]);
 
   // Calculate tab widths and positions
   const calculateTabWidths = useCallback(() => {
@@ -194,7 +280,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     });
   }, [calculateTabTranslation]);
 
-  // Touch/swipe support for mobile
+  // Touch/swipe support for mobile tabs
   const addTouchSupport = useCallback(() => {
     if (!tabViewportRef.current) return;
 
@@ -262,6 +348,76 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     };
   }, [activeTab, handleTabClick]);
 
+  // Touch/swipe support for mobile carousel
+  const addCarouselTouchSupport = useCallback(() => {
+    if (!isMobile || !carouselRef.current) return;
+
+    let startX = 0;
+    let startY = 0;
+    let isScrolling = false;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isScrolling = false;
+      pauseAutoSlide(); // Pause auto-slide on touch
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!startX || !startY) return;
+
+      const diffX = startX - e.touches[0].clientX;
+      const diffY = startY - e.touches[0].clientY;
+
+      if (!isScrolling) {
+        isScrolling = Math.abs(diffX) > Math.abs(diffY);
+      }
+
+      if (isScrolling) {
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!startX || !isScrolling) {
+        // Resume auto-slide after a delay if no swipe occurred
+        setTimeout(() => resumeAutoSlide(), 2000);
+        return;
+      }
+
+      const diffX = startX - e.changedTouches[0].clientX;
+      const threshold = 50;
+
+      if (Math.abs(diffX) > threshold) {
+        if (diffX > 0) {
+          // Swipe left - go to next item
+          nextCarouselItem();
+        } else {
+          // Swipe right - go to previous item
+          prevCarouselItem();
+        }
+      }
+
+      // Resume auto-slide after interaction
+      setTimeout(() => resumeAutoSlide(), 3000);
+
+      startX = 0;
+      startY = 0;
+      isScrolling = false;
+    };
+
+    const carousel = carouselRef.current;
+    carousel.addEventListener('touchstart', handleTouchStart, { passive: true });
+    carousel.addEventListener('touchmove', handleTouchMove, { passive: false });
+    carousel.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      carousel.removeEventListener('touchstart', handleTouchStart);
+      carousel.removeEventListener('touchmove', handleTouchMove);
+      carousel.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile, nextCarouselItem, prevCarouselItem, pauseAutoSlide, resumeAutoSlide]);
+
   // Initialize tab positions on mount and resize
   useEffect(() => {
     const initializeTabs = () => {
@@ -289,13 +445,54 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     
     // Add touch support
     const cleanupTouch = addTouchSupport();
+    const cleanupCarouselTouch = addCarouselTouchSupport();
     
     return () => {
       clearTimeout(timer);
       window.removeEventListener('resize', handleResize);
       cleanupTouch?.();
+      cleanupCarouselTouch?.();
     };
-  }, [activeTab, calculateTabWidths, calculateTabTranslation, animateTabsHorizontally, addTouchSupport]);
+  }, [activeTab, calculateTabWidths, calculateTabTranslation, animateTabsHorizontally, addTouchSupport, addCarouselTouchSupport]);
+
+  // Carousel auto-slide effect
+  useEffect(() => {
+    if (isMobile && !isCarouselPaused) {
+      startAutoSlide();
+    } else {
+      stopAutoSlide();
+    }
+
+    return () => {
+      stopAutoSlide();
+    };
+  }, [isMobile, isCarouselPaused, startAutoSlide, stopAutoSlide]);
+
+  // Sync carousel position when currentCarouselIndex changes
+  useEffect(() => {
+    if (isMobile && activeCategoryItems.length > 0) {
+      goToCarouselItem(currentCarouselIndex);
+    }
+  }, [currentCarouselIndex, isMobile, activeCategoryItems.length, goToCarouselItem]);
+
+  // Reset carousel when tab changes
+  useEffect(() => {
+    if (isMobile) {
+      setCurrentCarouselIndex(0);
+      // Initialize carousel position
+      if (carouselTrackRef.current && activeCategoryItems.length > 0) {
+        const itemWidth = window.innerWidth * 0.85;
+        const gap = window.innerWidth * 0.02;
+        const totalItemWidth = itemWidth + gap;
+        const initialTranslateX = -(3 * totalItemWidth); // Start at first real item (after 3 duplicates)
+        
+        gsap.set(carouselTrackRef.current, { 
+          x: initialTranslateX,
+          willChange: 'transform'
+        });
+      }
+    }
+  }, [activeTab, isMobile, activeCategoryItems.length]);
 
   // Circular navigation methods
   const nextTab = useCallback(() => {
@@ -495,62 +692,172 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           ref={containerRef}
           className="where-to__panels"
         >
-          {venueData.map((category) => (
-            <section
-              key={category.id}
-              id={`panel-${category.id}`}
-              role="tabpanel"
-              aria-labelledby={`tab-${category.id}`}
-              ref={(el) => { panelRefs.current[category.id] = el; }}
-              className={cn(
-                "where-to__panel",
-                category.id !== activeTab && "hidden"
-              )}
+          {isMobile ? (
+            // Mobile Carousel Layout
+            <div 
+              ref={carouselRef}
+              className="where-to__carousel-container"
+              onMouseEnter={pauseAutoSlide}
+              onMouseLeave={resumeAutoSlide}
             >
-              <ol className="where-to__list list-none p-0 m-0">
-                {category.items.map((item, index) => (
-                  <li 
-                    key={item.id}
-                    className={cn(
-                      "where-to__row where-to__content-item",
-                      !isMobile && "grid gap-where-gutter-m lg:gap-where-gutter-d py-6 lg:py-8",
-                      !isMobile && "grid-cols-1 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_2fr]",
-                      !isMobile && "items-start",
-                      index > 0 && "border-t border-where-divider"
-                    )}
-                  >
-                    <div className={cn(
-                      "where-to__thumb where-to__content-image",
-                      !isMobile && "w-full md:w-40 lg:w-64 mb-4 md:mb-0"
-                    )}>
-                      <Image
-                        src={item.image}
-                        alt={item.alt}
-                        width={260}
-                        height={336}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
+              <div className="where-to__carousel-viewport overflow-hidden">
+                <div 
+                  ref={carouselTrackRef}
+                  className="where-to__carousel-track flex will-change-transform"
+                  style={{ transform: 'translateZ(0)' }}
+                >
+                  {/* Duplicate last 3 items at the beginning for infinite loop */}
+                  {activeCategoryItems.slice(-3).map((item, index) => (
+                    <div
+                      key={`prev-${item.id}`}
+                      className="where-to__carousel-item flex-shrink-0"
+                      style={{ 
+                        width: '85vw',
+                        marginRight: '2vw'
+                      }}
+                    >
+                      <div className="where-to__carousel-content bg-white rounded-lg overflow-hidden shadow-sm">
+                        <div className="where-to__carousel-image">
+                          <Image
+                            src={item.image}
+                            alt={item.alt}
+                            width={364}
+                            height={418}
+                            className="w-full h-64 object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="where-to__carousel-text p-6">
+                          <h3 className="where-to__carousel-title text-xl font-medium text-where-active mb-3">
+                            {item.title}
+                          </h3>
+                          <p className="where-to__carousel-desc text-sm leading-relaxed text-gray-600">
+                            {item.description}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    
-                    <h3 className={cn(
-                      "where-to__item-title",
-                      !isMobile && "text-where-title font-medium text-where-active mb-2 md:mb-0 md:mr-4 lg:mr-0"
-                    )}>
-                      {item.title}
-                    </h3>
-                    
-                    <p className={cn(
-                      "where-to__item-desc",
-                      !isMobile && "leading-relaxed"
-                    )}>
-                      {item.description}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          ))}
+                  ))}
+
+                  {/* Main items */}
+                  {activeCategoryItems.map((item, index) => (
+                    <div
+                      key={item.id}
+                      className="where-to__carousel-item flex-shrink-0"
+                      style={{ 
+                        width: '85vw',
+                        marginRight: '2vw'
+                      }}
+                    >
+                      <div className="where-to__carousel-content bg-white rounded-lg overflow-hidden shadow-sm">
+                        <div className="where-to__carousel-image">
+                          <Image
+                            src={item.image}
+                            alt={item.alt}
+                            width={364}
+                            height={418}
+                            className="w-full h-64 object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="where-to__carousel-text p-6">
+                          <h3 className="where-to__carousel-title text-xl font-medium text-where-active mb-3">
+                            {item.title}
+                          </h3>
+                          <p className="where-to__carousel-desc text-sm leading-relaxed text-gray-600">
+                            {item.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Duplicate first 3 items at the end for infinite loop */}
+                  {activeCategoryItems.slice(0, 3).map((item, index) => (
+                    <div
+                      key={`next-${item.id}`}
+                      className="where-to__carousel-item flex-shrink-0"
+                      style={{ 
+                        width: '85vw',
+                        marginRight: '2vw'
+                      }}
+                    >
+                      <div className="where-to__carousel-content bg-white rounded-lg overflow-hidden shadow-sm">
+                        <div className="where-to__carousel-image">
+                          <Image
+                            src={item.image}
+                            alt={item.alt}
+                            width={364}
+                            height={418}
+                            className="w-full h-64 object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="where-to__carousel-text p-6">
+                          <h3 className="where-to__carousel-title text-xl font-medium text-where-active mb-3">
+                            {item.title}
+                          </h3>
+                          <p className="where-to__carousel-desc text-sm leading-relaxed text-gray-600">
+                            {item.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          ) : (
+            // Desktop Layout
+            venueData.map((category) => (
+              <section
+                key={category.id}
+                id={`panel-${category.id}`}
+                role="tabpanel"
+                aria-labelledby={`tab-${category.id}`}
+                ref={(el) => { panelRefs.current[category.id] = el; }}
+                className={cn(
+                  "where-to__panel",
+                  category.id !== activeTab && "hidden"
+                )}
+              >
+                <ol className="where-to__list list-none p-0 m-0">
+                  {category.items.map((item, index) => (
+                    <li 
+                      key={item.id}
+                      className={cn(
+                        "where-to__row where-to__content-item",
+                        "grid gap-where-gutter-m lg:gap-where-gutter-d py-6 lg:py-8",
+                        "grid-cols-1 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_2fr]",
+                        "items-start",
+                        index > 0 && "border-t border-where-divider"
+                      )}
+                    >
+                      <div className="where-to__thumb where-to__content-image w-full md:w-40 lg:w-64 mb-4 md:mb-0">
+                        <Image
+                          src={item.image}
+                          alt={item.alt}
+                          width={260}
+                          height={336}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                      
+                      <h3 className="where-to__item-title text-where-title font-medium text-where-active mb-2 md:mb-0 md:mr-4 lg:mr-0">
+                        {item.title}
+                      </h3>
+                      
+                      <p className="where-to__item-desc leading-relaxed">
+                        {item.description}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            ))
+          )}
         </div>
       </div>
     </div>
