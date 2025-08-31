@@ -58,9 +58,7 @@
 
 /* Focus styles for better accessibility */
 .where-to__tab:focus-visible {
-  outline: 2px solid var(--where-color-active);
-  outline-offset: 4px;
-  border-radius: 2px;
+  outline: none;
 }
 
 /* Ensure proper contrast for accessibility */

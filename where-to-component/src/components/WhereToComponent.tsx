@@ -396,7 +396,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                 "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
                 "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
                 "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
-                "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
+                "focus:outline-none",
                 category.id === activeTab 
                   ? "text-where-active hover:text-where-active" 
                   : "text-where-inactive hover:text-where-active"
@@ -421,7 +421,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                 "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
                 "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
                 "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
-                "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
+                "focus:outline-none",
                 category.id === activeTab 
                   ? "text-where-active hover:text-where-active" 
                   : "text-where-inactive hover:text-where-active"
@@ -445,7 +445,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                 "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
                 "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
                 "mr-8 md:mr-10 lg:mr-15 whitespace-nowrap",
-                "focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-offset-2",
+                "focus:outline-none",
                 category.id === activeTab 
                   ? "text-where-active hover:text-where-active" 
                   : "text-where-inactive hover:text-where-active"
