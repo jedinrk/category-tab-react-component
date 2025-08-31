@@ -9,6 +9,13 @@ const bradfordLLWeb = localFont({
   preload: true,
 });
 
+const theinhardtMedium = localFont({
+  src: "../../public/fonts/Theinhardt-Medium.fc38eab.woff2",
+  variable: "--font-theinhardt-medium",
+  display: "swap",
+  preload: true,
+});
+
 export const metadata: Metadata = {
   title: "WHERE TO Component - 53 West 53",
   description: "A pixel-perfect implementation of the WHERE TO component from 53 West 53 neighborhood page",
@@ -21,7 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${bradfordLLWeb.variable}`}>{children}</body>
+      <body className={`${bradfordLLWeb.variable} ${theinhardtMedium.variable}`}>{children}</body>
     </html>
   );
 }

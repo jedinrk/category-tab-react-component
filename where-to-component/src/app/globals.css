@@ -20,6 +20,15 @@
   font-display: swap;
 }
 
+/* Theinhardt-Medium Font Face */
+@font-face {
+  font-family: 'Theinhardt-Medium';
+  src: url('/fonts/Theinhardt-Medium.fc38eab.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -164,6 +173,7 @@
   
   /* Mobile tab styling */
   .where-to--mobile .where-to__tab {
+    font-family: var(--font-theinhardt-medium), 'Theinhardt-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     font-size: var(--where-tab-size-mobile);
     line-height: 1.2;
     letter-spacing: 0.8px;
