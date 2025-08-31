@@ -716,7 +716,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                         marginRight: '2vw'
                       }}
                     >
-                      <div className="where-to__carousel-content bg-white rounded-lg overflow-hidden shadow-sm">
+                      <div className="where-to__carousel-content">
                         <div className="where-to__carousel-image">
                           <Image
                             src={item.image}
@@ -749,7 +749,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                         marginRight: '2vw'
                       }}
                     >
-                      <div className="where-to__carousel-content bg-white rounded-lg overflow-hidden shadow-sm">
+                      <div className="where-to__carousel-content">
                         <div className="where-to__carousel-image">
                           <Image
                             src={item.image}
@@ -782,7 +782,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                         marginRight: '2vw'
                       }}
                     >
-                      <div className="where-to__carousel-content bg-white rounded-lg overflow-hidden shadow-sm">
+                      <div className="where-to__carousel-content">
                         <div className="where-to__carousel-image">
                           <Image
                             src={item.image}
