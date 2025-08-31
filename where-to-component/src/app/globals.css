@@ -50,7 +50,7 @@
   --where-tab-margin-mobile: 18px;
   --where-divider-margin-mobile: 0 0 24px;
   --where-content-gap-mobile: 32px;
-  --where-side-padding-mobile: 20px;
+  --where-side-padding-mobile: 14px;
   
   /* Mobile Touch Targets */
   --where-touch-target-min: 44px;
@@ -153,7 +153,7 @@
   
   /* Mobile tab container with horizontal scroll */
   .where-to--mobile .where-to__tab-viewport {
-    margin-left: calc(-1 * var(--where-side-padding-mobile));
+    margin-left: -1.5rem;
     padding-left: var(--where-side-padding-mobile);
     overflow: hidden;
   }
