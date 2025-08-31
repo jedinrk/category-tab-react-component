@@ -462,7 +462,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
 
       {/* Divider and content with 3rem left margin */}
       <div className="where-to__content-container">
-        <hr className="where-to__divider border-0 border-t border-where-divider my-6 lg:my-8" />
+        <hr className="where-to__divider border-0 border-t border-where-divider mt-20 sm:mt-120" />
 
         <div 
           ref={containerRef}
