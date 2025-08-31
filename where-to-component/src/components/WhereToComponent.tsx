@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { useRef, useEffect, useCallback, useImperativeHandle, forwardRef, useState } from 'react';
 import Image from 'next/image';
 import { gsap } from 'gsap';
 import { useWhereToStore } from '@/lib/store';
@@ -24,9 +24,27 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   const tabRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
   const isTransitioning = useRef(false);
   const tabWidths = useRef<{ [key: string]: number }>({});
+  const [isMobile, setIsMobile] = useState(false);
 
   const activeCategory = venueData.find(category => category.id === activeTab);
   const inactiveCategories = venueData.filter(category => category.id !== activeTab);
+
+  // Mobile detection hook
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 767);
+    };
+    
+    // Check on mount
+    checkMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // Calculate tab widths and positions
   const calculateTabWidths = useCallback(() => {
@@ -339,7 +357,10 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
 
   return (
     <section 
-      className="where-to py-12 lg:py-16" 
+      className={cn(
+        "where-to py-12 lg:py-16",
+        isMobile && "where-to--mobile"
+      )}
       aria-labelledby="where-to-heading"
       style={{
         '--where-color-active': '#8B4513',
@@ -356,7 +377,10 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
         '--where-gutter-m': '24px',
       } as React.CSSProperties}
     >
-      <div className="where-to__inner" style={{ paddingLeft: '3rem' }}>
+      <div className={cn(
+        "where-to__inner",
+        !isMobile && "pl-12"
+      )}>
       {/* Heading with 3rem left margin */}
       <div className="where-to__heading-container">
         <h2 id="where-to-heading" className="where-to__heading">
@@ -370,11 +394,14 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       <div 
         ref={tabViewportRef}
         className="where-to__tab-viewport w-full"
-        style={{ 
+        style={!isMobile ? { 
           position: 'relative',
           overflow: 'hidden',
           marginLeft: '-3rem',
           paddingLeft: '3rem'
+        } : {
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
         <nav 
@@ -485,13 +512,17 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                   <li 
                     key={item.id}
                     className={cn(
-                      "where-to__row grid gap-where-gutter-m lg:gap-where-gutter-d py-6 lg:py-8",
-                      "grid-cols-1 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_2fr]",
-                      "items-start",
+                      "where-to__row where-to__content-item",
+                      !isMobile && "grid gap-where-gutter-m lg:gap-where-gutter-d py-6 lg:py-8",
+                      !isMobile && "grid-cols-1 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_2fr]",
+                      !isMobile && "items-start",
                       index > 0 && "border-t border-where-divider"
                     )}
                   >
-                    <div className="where-to__thumb w-full md:w-40 lg:w-64 mb-4 md:mb-0">
+                    <div className={cn(
+                      "where-to__thumb where-to__content-image",
+                      !isMobile && "w-full md:w-40 lg:w-64 mb-4 md:mb-0"
+                    )}>
                       <Image
                         src={item.image}
                         alt={item.alt}
@@ -502,11 +533,17 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                       />
                     </div>
                     
-                    <h3 className="where-to__item-title text-where-title font-medium text-where-active mb-2 md:mb-0 md:mr-4 lg:mr-0">
+                    <h3 className={cn(
+                      "where-to__item-title",
+                      !isMobile && "text-where-title font-medium text-where-active mb-2 md:mb-0 md:mr-4 lg:mr-0"
+                    )}>
                       {item.title}
                     </h3>
                     
-                    <p className="where-to__item-desc leading-relaxed">
+                    <p className={cn(
+                      "where-to__item-desc",
+                      !isMobile && "leading-relaxed"
+                    )}>
                       {item.description}
                     </p>
                   </li>

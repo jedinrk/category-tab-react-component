@@ -37,6 +37,32 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
+/* Mobile-specific CSS variables */
+:root {
+  /* Mobile Typography */
+  --where-heading-size-mobile: 3rem;
+  --where-tab-size-mobile: 1.6rem;
+  --where-content-title-mobile: 1.3rem;
+  --where-content-body-mobile: 1rem;
+  
+  /* Mobile Spacing */
+  --where-heading-margin-mobile: 36px;
+  --where-tab-margin-mobile: 18px;
+  --where-divider-margin-mobile: 18px 0 24px;
+  --where-content-gap-mobile: 32px;
+  --where-side-padding-mobile: 20px;
+  
+  /* Mobile Touch Targets */
+  --where-touch-target-min: 44px;
+  --where-touch-target-recommended: 48px;
+  --where-touch-spacing: 8px;
+  
+  /* Mobile Colors */
+  --where-color-active-mobile: #8B6F47;
+  --where-color-inactive-mobile: rgba(139, 111, 71, 0.5);
+  --where-divider-mobile: rgba(139, 111, 71, 0.2);
+}
+
 /* BwDiagrid font for headings and tabs */
 .where-to__heading,
 .where-to__tab {
@@ -107,4 +133,128 @@
   font-size: 24px;
   font-weight: 500;
   line-height: 1.2;
+}
+
+/* Mobile-specific styles (≤767px) */
+@media (max-width: 767px) {
+  /* Mobile container padding */
+  .where-to--mobile {
+    padding-left: var(--where-side-padding-mobile);
+    padding-right: var(--where-side-padding-mobile);
+  }
+  
+  /* Mobile heading with increased margin */
+  .where-to--mobile .where-to__heading {
+    font-size: var(--where-heading-size-mobile);
+    margin-bottom: var(--where-heading-margin-mobile);
+    line-height: 1.1;
+    letter-spacing: 1.5px;
+  }
+  
+  /* Mobile tab container with horizontal scroll */
+  .where-to--mobile .where-to__tab-viewport {
+    margin-left: calc(-1 * var(--where-side-padding-mobile));
+    padding-left: var(--where-side-padding-mobile);
+    overflow: hidden;
+  }
+  
+  .where-to--mobile .where-to__tab-slider {
+    padding-right: var(--where-side-padding-mobile);
+  }
+  
+  /* Mobile tab styling */
+  .where-to--mobile .where-to__tab {
+    font-size: var(--where-tab-size-mobile);
+    line-height: 1.2;
+    letter-spacing: 0.8px;
+    min-height: var(--where-touch-target-min);
+    padding: 12px 8px;
+    margin-right: 32px;
+  }
+  
+  /* Hide scrollbars on mobile */
+  .where-to--mobile .where-to__tab-viewport {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .where-to--mobile .where-to__tab-viewport::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Mobile divider with reduced margin */
+  .where-to--mobile .where-to__divider {
+    margin: var(--where-divider-margin-mobile);
+    border-color: var(--where-divider-mobile);
+  }
+  
+  /* Mobile content stacked layout */
+  .where-to--mobile .where-to__content-item {
+    display: block;
+    margin-bottom: var(--where-content-gap-mobile);
+  }
+  
+  .where-to--mobile .where-to__content-image {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  
+  .where-to--mobile .where-to__content-image img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+  
+  /* Mobile typography for content */
+  .where-to--mobile .where-to__item-title {
+    font-size: var(--where-content-title-mobile);
+    margin-bottom: 12px;
+    font-weight: 400;
+  }
+  
+  .where-to--mobile .where-to__item-desc {
+    font-size: var(--where-content-body-mobile);
+    line-height: 1.6;
+    color: #666;
+  }
+  
+  /* Mobile touch feedback */
+  .where-to--mobile .where-to__tab:active {
+    transform: scale(0.95);
+    opacity: 0.7;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+  }
+}
+
+/* Tablet transition styles (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .where-to__tab {
+    font-size: 2rem;
+  }
+  
+  .where-to__heading {
+    font-size: 5.5rem;
+  }
+}
+
+/* Hover states for devices that support it */
+@media (hover: hover) {
+  .where-to__tab:hover {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+  }
+}
+
+/* Enhanced reduced motion support for mobile */
+@media (prefers-reduced-motion: reduce) {
+  .where-to--mobile .where-to__tab-slider,
+  .where-to--mobile .where-to__content-panel {
+    transition: opacity 0.1s linear !important;
+    transform: none !important;
+  }
+  
+  .where-to--mobile .where-to__tab-viewport {
+    scroll-behavior: auto !important;
+  }
 }
