@@ -506,7 +506,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                       {item.title}
                     </h3>
                     
-                    <p className="where-to__item-desc text-where-body leading-relaxed text-where-body">
+                    <p className="where-to__item-desc leading-relaxed">
                       {item.description}
                     </p>
                   </li>
