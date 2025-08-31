@@ -359,7 +359,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       <div className="where-to__inner" style={{ paddingLeft: '3rem' }}>
       {/* Heading with 3rem left margin */}
       <div className="where-to__heading-container">
-        <h2 id="where-to-heading" className="where-to__heading mb-6 lg:mb-8">
+        <h2 id="where-to-heading" className="where-to__heading">
           <span className="where-to__heading-prefix block text-where-heading-m lg:text-where-heading-d font-light tracking-wide text-where-active uppercase leading-none">
             WHERE TO
           </span>
@@ -369,7 +369,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       {/* Tab Viewport Container - Full width, extends to right edge */}
       <div 
         ref={tabViewportRef}
-        className="where-to__tab-viewport w-full mt-2"
+        className="where-to__tab-viewport w-full"
         style={{ 
           position: 'relative',
           overflow: 'hidden',

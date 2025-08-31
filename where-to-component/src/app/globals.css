@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* BwDiagrid Font Face */
+@font-face {
+  font-family: 'BwDiagrid';
+  src: url('/fonts/BwDiagrid-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -17,6 +26,12 @@
 /* Custom CSS for WHERE TO component */
 .where-to {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* BwDiagrid font for headings and tabs */
+.where-to__heading,
+.where-to__tab {
+  font-family: 'BwDiagrid', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* Responsive grid areas for tablet layout */
