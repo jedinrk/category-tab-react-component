@@ -487,16 +487,16 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                     className={cn(
                       "where-to__row grid gap-where-gutter-m lg:gap-where-gutter-d py-6 lg:py-8",
                       "grid-cols-1 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_2fr]",
-                      "items-start lg:items-center",
+                      "items-start",
                       index > 0 && "border-t border-where-divider"
                     )}
                   >
-                    <div className="where-to__thumb w-full md:w-40 lg:w-52 aspect-square mb-4 md:mb-0">
+                    <div className="where-to__thumb w-full md:w-40 lg:w-64 mb-4 md:mb-0">
                       <Image
                         src={item.image}
                         alt={item.alt}
-                        width={208}
-                        height={208}
+                        width={260}
+                        height={336}
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
