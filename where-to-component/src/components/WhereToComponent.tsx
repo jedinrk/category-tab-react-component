@@ -354,27 +354,46 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
 
     let startX = 0;
     let startY = 0;
+    let currentX = 0;
     let isScrolling = false;
+    let isDragging = false;
 
     const handleTouchStart = (e: TouchEvent) => {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
+      currentX = startX;
       isScrolling = false;
+      isDragging = false;
       pauseAutoSlide(); // Pause auto-slide on touch
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!startX || !startY) return;
 
-      const diffX = startX - e.touches[0].clientX;
+      currentX = e.touches[0].clientX;
+      const diffX = startX - currentX;
       const diffY = startY - e.touches[0].clientY;
 
-      if (!isScrolling) {
+      if (!isScrolling && !isDragging) {
         isScrolling = Math.abs(diffX) > Math.abs(diffY);
+        isDragging = isScrolling;
       }
 
       if (isScrolling) {
         e.preventDefault();
+        
+        // Optional: Add visual feedback during drag
+        if (carouselTrackRef.current && isDragging) {
+          const itemWidth = window.innerWidth * 0.85;
+          const gap = window.innerWidth * 0.02;
+          const totalItemWidth = itemWidth + gap;
+          const currentTranslateX = -((currentCarouselIndex + 3) * totalItemWidth);
+          const dragOffset = -diffX * 0.3; // Reduce drag sensitivity
+          
+          gsap.set(carouselTrackRef.current, {
+            x: currentTranslateX + dragOffset
+          });
+        }
       }
     };
 
@@ -386,9 +405,15 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       }
 
       const diffX = startX - e.changedTouches[0].clientX;
-      const threshold = 50;
+      const threshold = 30; // Reduced threshold for better responsiveness
+      const velocity = Math.abs(diffX) / (Date.now() - (e.timeStamp || Date.now()));
 
-      if (Math.abs(diffX) > threshold) {
+      // Reset visual feedback
+      if (carouselTrackRef.current && isDragging) {
+        goToCarouselItem(currentCarouselIndex);
+      }
+
+      if (Math.abs(diffX) > threshold || velocity > 0.5) {
         if (diffX > 0) {
           // Swipe left - go to next item
           nextCarouselItem();
@@ -403,7 +428,9 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
 
       startX = 0;
       startY = 0;
+      currentX = 0;
       isScrolling = false;
+      isDragging = false;
     };
 
     const carousel = carouselRef.current;
@@ -416,7 +443,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       carousel.removeEventListener('touchmove', handleTouchMove);
       carousel.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isMobile, nextCarouselItem, prevCarouselItem, pauseAutoSlide, resumeAutoSlide]);
+  }, [isMobile, nextCarouselItem, prevCarouselItem, pauseAutoSlide, resumeAutoSlide, currentCarouselIndex, goToCarouselItem]);
 
   // Initialize tab positions on mount and resize
   useEffect(() => {
@@ -526,7 +553,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     goToTab
   }), [nextTab, prevTab, goToTab]);
 
-  // Handle keyboard navigation
+  // Handle keyboard navigation for tabs
   const handleKeyDown = (event: React.KeyboardEvent, tabId: TabId) => {
     const tabs = venueData.map(cat => cat.id);
     const currentIndex = tabs.indexOf(activeTab);
@@ -548,6 +575,34 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       case ' ':
         event.preventDefault();
         handleTabClick(tabId);
+        break;
+    }
+  };
+
+  // Handle keyboard navigation for carousel controls
+  const handleCarouselKeyDown = (event: React.KeyboardEvent) => {
+    if (!isMobile) return;
+    
+    switch (event.key) {
+      case 'ArrowRight':
+        event.preventDefault();
+        nextCarouselItem();
+        pauseAutoSlide();
+        setTimeout(() => resumeAutoSlide(), 3000);
+        break;
+      case 'ArrowLeft':
+        event.preventDefault();
+        prevCarouselItem();
+        pauseAutoSlide();
+        setTimeout(() => resumeAutoSlide(), 3000);
+        break;
+      case ' ':
+        event.preventDefault();
+        if (isCarouselPaused) {
+          resumeAutoSlide();
+        } else {
+          pauseAutoSlide();
+        }
         break;
     }
   };
@@ -699,6 +754,10 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
               className="where-to__carousel-container"
               onMouseEnter={pauseAutoSlide}
               onMouseLeave={resumeAutoSlide}
+              onKeyDown={handleCarouselKeyDown}
+              tabIndex={0}
+              role="region"
+              aria-label="Carousel navigation"
             >
               <div className="where-to__carousel-viewport overflow-hidden">
                 <div 
@@ -805,6 +864,113 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Carousel Navigation Controls */}
+              <div className="where-to__carousel-controls flex justify-between items-center mt-6 px-4">
+                {/* Previous Button */}
+                <button
+                  onClick={prevCarouselItem}
+                  onMouseEnter={pauseAutoSlide}
+                  onMouseLeave={resumeAutoSlide}
+                  className="where-to__carousel-btn where-to__carousel-btn--prev flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-opacity-50"
+                  aria-label="Previous item"
+                  disabled={activeCategoryItems.length <= 1}
+                >
+                  <svg 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    className="text-where-active"
+                  >
+                    <polyline points="15,18 9,12 15,6"></polyline>
+                  </svg>
+                </button>
+
+                {/* Carousel Indicators */}
+                <div className="where-to__carousel-indicators flex space-x-2">
+                  {activeCategoryItems.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentCarouselIndex(index);
+                        goToCarouselItem(index);
+                        pauseAutoSlide();
+                        setTimeout(() => resumeAutoSlide(), 3000);
+                      }}
+                      onMouseEnter={pauseAutoSlide}
+                      onMouseLeave={resumeAutoSlide}
+                      className={cn(
+                        "where-to__carousel-indicator w-2 h-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-opacity-50",
+                        index === currentCarouselIndex
+                          ? "bg-where-active scale-125"
+                          : "bg-gray-300 hover:bg-gray-400"
+                      )}
+                      aria-label={`Go to item ${index + 1}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={nextCarouselItem}
+                  onMouseEnter={pauseAutoSlide}
+                  onMouseLeave={resumeAutoSlide}
+                  className="where-to__carousel-btn where-to__carousel-btn--next flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-opacity-50"
+                  aria-label="Next item"
+                  disabled={activeCategoryItems.length <= 1}
+                >
+                  <svg 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    className="text-where-active"
+                  >
+                    <polyline points="9,18 15,12 9,6"></polyline>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Auto-slide pause/play toggle (optional) */}
+              <div className="where-to__carousel-auto-control flex justify-center mt-4">
+                <button
+                  onClick={() => {
+                    if (isCarouselPaused) {
+                      resumeAutoSlide();
+                    } else {
+                      pauseAutoSlide();
+                    }
+                  }}
+                  className="where-to__carousel-auto-btn flex items-center space-x-2 px-4 py-2 text-sm text-where-active hover:text-where-active/80 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-opacity-50 rounded-md"
+                  aria-label={isCarouselPaused ? "Resume auto-slide" : "Pause auto-slide"}
+                >
+                  {isCarouselPaused ? (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5,3 19,12 5,21"></polygon>
+                      </svg>
+                      <span>Resume</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                      </svg>
+                      <span>Pause</span>
+                    </>
+                  )}
+                </button>
               </div>
 
             </div>
