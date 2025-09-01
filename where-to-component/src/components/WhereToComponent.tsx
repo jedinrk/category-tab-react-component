@@ -866,111 +866,29 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
                 </div>
               </div>
 
-              {/* Carousel Navigation Controls */}
-              <div className="where-to__carousel-controls flex justify-between items-center mt-6 px-4">
-                {/* Previous Button */}
-                <button
-                  onClick={prevCarouselItem}
-                  onMouseEnter={pauseAutoSlide}
-                  onMouseLeave={resumeAutoSlide}
-                  className="where-to__carousel-btn where-to__carousel-btn--prev flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-opacity-50"
-                  aria-label="Previous item"
-                  disabled={activeCategoryItems.length <= 1}
+              {/* Progress Bar */}
+              <div className="where-to__carousel-progress mt-6 px-4">
+                <div 
+                  className="where-to__progress-bar w-full h-[1px] rounded-full overflow-hidden"
+                  style={{ 
+                    backgroundColor: 'rgba(138,108,96,.2)',
+                    '--tw-bg-opacity': '1'
+                  } as React.CSSProperties}
+                  role="progressbar"
+                  aria-valuenow={currentCarouselIndex + 1}
+                  aria-valuemin={1}
+                  aria-valuemax={activeCategoryItems.length}
+                  aria-label={`Item ${currentCarouselIndex + 1} of ${activeCategoryItems.length}`}
                 >
-                  <svg 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    className="text-where-active"
-                  >
-                    <polyline points="15,18 9,12 15,6"></polyline>
-                  </svg>
-                </button>
-
-                {/* Carousel Indicators */}
-                <div className="where-to__carousel-indicators flex space-x-2">
-                  {activeCategoryItems.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setCurrentCarouselIndex(index);
-                        goToCarouselItem(index);
-                        pauseAutoSlide();
-                        setTimeout(() => resumeAutoSlide(), 3000);
-                      }}
-                      onMouseEnter={pauseAutoSlide}
-                      onMouseLeave={resumeAutoSlide}
-                      className={cn(
-                        "where-to__carousel-indicator w-2 h-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-opacity-50",
-                        index === currentCarouselIndex
-                          ? "bg-where-active scale-125"
-                          : "bg-gray-300 hover:bg-gray-400"
-                      )}
-                      aria-label={`Go to item ${index + 1}`}
-                    />
-                  ))}
+                  <div 
+                    className="where-to__progress-fill h-full transition-all duration-300 ease-out"
+                    style={{ 
+                      width: `${((currentCarouselIndex + 1) / activeCategoryItems.length) * 100}%`,
+                      backgroundColor: 'rgba(138,108,96,var(--tw-bg-opacity))',
+                      '--tw-bg-opacity': '1'
+                    } as React.CSSProperties}
+                  />
                 </div>
-
-                {/* Next Button */}
-                <button
-                  onClick={nextCarouselItem}
-                  onMouseEnter={pauseAutoSlide}
-                  onMouseLeave={resumeAutoSlide}
-                  className="where-to__carousel-btn where-to__carousel-btn--next flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-opacity-50"
-                  aria-label="Next item"
-                  disabled={activeCategoryItems.length <= 1}
-                >
-                  <svg 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    className="text-where-active"
-                  >
-                    <polyline points="9,18 15,12 9,6"></polyline>
-                  </svg>
-                </button>
-              </div>
-
-              {/* Auto-slide pause/play toggle (optional) */}
-              <div className="where-to__carousel-auto-control flex justify-center mt-4">
-                <button
-                  onClick={() => {
-                    if (isCarouselPaused) {
-                      resumeAutoSlide();
-                    } else {
-                      pauseAutoSlide();
-                    }
-                  }}
-                  className="where-to__carousel-auto-btn flex items-center space-x-2 px-4 py-2 text-sm text-where-active hover:text-where-active/80 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-where-active focus:ring-opacity-50 rounded-md"
-                  aria-label={isCarouselPaused ? "Resume auto-slide" : "Pause auto-slide"}
-                >
-                  {isCarouselPaused ? (
-                    <>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="5,3 19,12 5,21"></polygon>
-                      </svg>
-                      <span>Resume</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <rect x="6" y="4" width="4" height="16"></rect>
-                        <rect x="14" y="4" width="4" height="16"></rect>
-                      </svg>
-                      <span>Pause</span>
-                    </>
-                  )}
-                </button>
               </div>
 
             </div>
