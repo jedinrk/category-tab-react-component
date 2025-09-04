@@ -7,6 +7,7 @@ import { useWhereToStore } from '@/lib/store';
 import { venueData } from '@/data/venues';
 import { TabId } from '@/types';
 import { cn } from '@/lib/utils';
+import MobileCarousel from '@/components/MobileCarousel';
 
 // Define the ref interface for external access
 export interface WhereToComponentRef {
@@ -25,14 +26,8 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   const isTransitioning = useRef(false);
   const tabWidths = useRef<{ [key: string]: number }>({});
   const [isMobile, setIsMobile] = useState(false);
-  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
-  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const carouselTrackRef = useRef<HTMLDivElement>(null);
-  const autoSlideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const activeCategory = venueData.find(category => category.id === activeTab);
-  const inactiveCategories = venueData.filter(category => category.id !== activeTab);
   const activeCategoryItems = activeCategory?.items || [];
 
   // Mobile detection hook
@@ -51,86 +46,6 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       window.removeEventListener('resize', checkMobile);
     };
   }, []);
-
-  // Auto-slide functionality for mobile carousel
-  const startAutoSlide = useCallback(() => {
-    if (!isMobile || isCarouselPaused || activeCategoryItems.length <= 1) return;
-    
-    if (autoSlideTimerRef.current) {
-      clearInterval(autoSlideTimerRef.current);
-    }
-    
-    autoSlideTimerRef.current = setInterval(() => {
-      setCurrentCarouselIndex(prevIndex => {
-        const nextIndex = (prevIndex + 1) % activeCategoryItems.length;
-        return nextIndex;
-      });
-    }, 4000); // 4 second intervals
-  }, [isMobile, isCarouselPaused, activeCategoryItems.length]);
-
-  const stopAutoSlide = useCallback(() => {
-    if (autoSlideTimerRef.current) {
-      clearInterval(autoSlideTimerRef.current);
-      autoSlideTimerRef.current = null;
-    }
-  }, []);
-
-  const pauseAutoSlide = useCallback(() => {
-    setIsCarouselPaused(true);
-    stopAutoSlide();
-  }, [stopAutoSlide]);
-
-  const resumeAutoSlide = useCallback(() => {
-    setIsCarouselPaused(false);
-  }, []);
-
-  // Carousel navigation functions
-  const goToCarouselItem = useCallback((index: number) => {
-    if (!isMobile || !carouselTrackRef.current) return;
-    
-    const itemWidth = window.innerWidth * 0.85; // 85% of viewport width
-    const gap = window.innerWidth * 0.02; // 2% gap
-    const totalItemWidth = itemWidth + gap;
-    
-    // Calculate position including duplicates (we'll add 3 items at the start for infinite loop)
-    const translateX = -((index + 3) * totalItemWidth);
-    
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
-    gsap.to(carouselTrackRef.current, {
-      x: translateX,
-      duration: prefersReducedMotion ? 0.2 : 0.6,
-      ease: "power2.out",
-      onComplete: () => {
-        // Handle infinite loop reset
-        if (index >= activeCategoryItems.length) {
-          // Reset to beginning
-          const resetIndex = index % activeCategoryItems.length;
-          const resetTranslateX = -((resetIndex + 3) * totalItemWidth);
-          gsap.set(carouselTrackRef.current, { x: resetTranslateX });
-          setCurrentCarouselIndex(resetIndex);
-        } else if (index < 0) {
-          // Reset to end
-          const resetIndex = activeCategoryItems.length + index;
-          const resetTranslateX = -((resetIndex + 3) * totalItemWidth);
-          gsap.set(carouselTrackRef.current, { x: resetTranslateX });
-          setCurrentCarouselIndex(resetIndex);
-        }
-      }
-    });
-  }, [isMobile, activeCategoryItems.length]);
-
-  const nextCarouselItem = useCallback(() => {
-    const nextIndex = (currentCarouselIndex + 1) % activeCategoryItems.length;
-    setCurrentCarouselIndex(nextIndex);
-    goToCarouselItem(nextIndex);
-  }, [currentCarouselIndex, activeCategoryItems.length, goToCarouselItem]);
-
-  const prevCarouselItem = useCallback(() => {
-    const prevIndex = (currentCarouselIndex - 1 + activeCategoryItems.length) % activeCategoryItems.length;
-    setCurrentCarouselIndex(prevIndex);
-    goToCarouselItem(prevIndex);
-  }, [currentCarouselIndex, activeCategoryItems.length, goToCarouselItem]);
 
   // Calculate tab widths and positions
   const calculateTabWidths = useCallback(() => {
@@ -348,103 +263,6 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     };
   }, [activeTab, handleTabClick]);
 
-  // Touch/swipe support for mobile carousel
-  const addCarouselTouchSupport = useCallback(() => {
-    if (!isMobile || !carouselRef.current) return;
-
-    let startX = 0;
-    let startY = 0;
-    let currentX = 0;
-    let isScrolling = false;
-    let isDragging = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-      currentX = startX;
-      isScrolling = false;
-      isDragging = false;
-      pauseAutoSlide(); // Pause auto-slide on touch
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!startX || !startY) return;
-
-      currentX = e.touches[0].clientX;
-      const diffX = startX - currentX;
-      const diffY = startY - e.touches[0].clientY;
-
-      if (!isScrolling && !isDragging) {
-        isScrolling = Math.abs(diffX) > Math.abs(diffY);
-        isDragging = isScrolling;
-      }
-
-      if (isScrolling) {
-        e.preventDefault();
-        
-        // Optional: Add visual feedback during drag
-        if (carouselTrackRef.current && isDragging) {
-          const itemWidth = window.innerWidth * 0.85;
-          const gap = window.innerWidth * 0.02;
-          const totalItemWidth = itemWidth + gap;
-          const currentTranslateX = -((currentCarouselIndex + 3) * totalItemWidth);
-          const dragOffset = -diffX * 0.3; // Reduce drag sensitivity
-          
-          gsap.set(carouselTrackRef.current, {
-            x: currentTranslateX + dragOffset
-          });
-        }
-      }
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (!startX || !isScrolling) {
-        // Resume auto-slide after a delay if no swipe occurred
-        setTimeout(() => resumeAutoSlide(), 2000);
-        return;
-      }
-
-      const diffX = startX - e.changedTouches[0].clientX;
-      const threshold = 30; // Reduced threshold for better responsiveness
-      const velocity = Math.abs(diffX) / (Date.now() - (e.timeStamp || Date.now()));
-
-      // Reset visual feedback
-      if (carouselTrackRef.current && isDragging) {
-        goToCarouselItem(currentCarouselIndex);
-      }
-
-      if (Math.abs(diffX) > threshold || velocity > 0.5) {
-        if (diffX > 0) {
-          // Swipe left - go to next item
-          nextCarouselItem();
-        } else {
-          // Swipe right - go to previous item
-          prevCarouselItem();
-        }
-      }
-
-      // Resume auto-slide after interaction
-      setTimeout(() => resumeAutoSlide(), 3000);
-
-      startX = 0;
-      startY = 0;
-      currentX = 0;
-      isScrolling = false;
-      isDragging = false;
-    };
-
-    const carousel = carouselRef.current;
-    carousel.addEventListener('touchstart', handleTouchStart, { passive: true });
-    carousel.addEventListener('touchmove', handleTouchMove, { passive: false });
-    carousel.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-    return () => {
-      carousel.removeEventListener('touchstart', handleTouchStart);
-      carousel.removeEventListener('touchmove', handleTouchMove);
-      carousel.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isMobile, nextCarouselItem, prevCarouselItem, pauseAutoSlide, resumeAutoSlide, currentCarouselIndex, goToCarouselItem]);
-
   // Initialize tab positions on mount and resize
   useEffect(() => {
     const initializeTabs = () => {
@@ -472,54 +290,13 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     
     // Add touch support
     const cleanupTouch = addTouchSupport();
-    const cleanupCarouselTouch = addCarouselTouchSupport();
     
     return () => {
       clearTimeout(timer);
       window.removeEventListener('resize', handleResize);
       cleanupTouch?.();
-      cleanupCarouselTouch?.();
     };
-  }, [activeTab, calculateTabWidths, calculateTabTranslation, animateTabsHorizontally, addTouchSupport, addCarouselTouchSupport]);
-
-  // Carousel auto-slide effect
-  useEffect(() => {
-    if (isMobile && !isCarouselPaused) {
-      startAutoSlide();
-    } else {
-      stopAutoSlide();
-    }
-
-    return () => {
-      stopAutoSlide();
-    };
-  }, [isMobile, isCarouselPaused, startAutoSlide, stopAutoSlide]);
-
-  // Sync carousel position when currentCarouselIndex changes
-  useEffect(() => {
-    if (isMobile && activeCategoryItems.length > 0) {
-      goToCarouselItem(currentCarouselIndex);
-    }
-  }, [currentCarouselIndex, isMobile, activeCategoryItems.length, goToCarouselItem]);
-
-  // Reset carousel when tab changes
-  useEffect(() => {
-    if (isMobile) {
-      setCurrentCarouselIndex(0);
-      // Initialize carousel position
-      if (carouselTrackRef.current && activeCategoryItems.length > 0) {
-        const itemWidth = window.innerWidth * 0.85;
-        const gap = window.innerWidth * 0.02;
-        const totalItemWidth = itemWidth + gap;
-        const initialTranslateX = -(3 * totalItemWidth); // Start at first real item (after 3 duplicates)
-        
-        gsap.set(carouselTrackRef.current, { 
-          x: initialTranslateX,
-          willChange: 'transform'
-        });
-      }
-    }
-  }, [activeTab, isMobile, activeCategoryItems.length]);
+  }, [activeTab, calculateTabWidths, calculateTabTranslation, animateTabsHorizontally, addTouchSupport]);
 
   // Circular navigation methods
   const nextTab = useCallback(() => {
@@ -575,34 +352,6 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       case ' ':
         event.preventDefault();
         handleTabClick(tabId);
-        break;
-    }
-  };
-
-  // Handle keyboard navigation for carousel controls
-  const handleCarouselKeyDown = (event: React.KeyboardEvent) => {
-    if (!isMobile) return;
-    
-    switch (event.key) {
-      case 'ArrowRight':
-        event.preventDefault();
-        nextCarouselItem();
-        pauseAutoSlide();
-        setTimeout(() => resumeAutoSlide(), 3000);
-        break;
-      case 'ArrowLeft':
-        event.preventDefault();
-        prevCarouselItem();
-        pauseAutoSlide();
-        setTimeout(() => resumeAutoSlide(), 3000);
-        break;
-      case ' ':
-        event.preventDefault();
-        if (isCarouselPaused) {
-          resumeAutoSlide();
-        } else {
-          pauseAutoSlide();
-        }
         break;
     }
   };
@@ -748,150 +497,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           className="where-to__panels"
         >
           {isMobile ? (
-            // Mobile Carousel Layout
-            <div 
-              ref={carouselRef}
-              className="where-to__carousel-container"
-              onMouseEnter={pauseAutoSlide}
-              onMouseLeave={resumeAutoSlide}
-              onKeyDown={handleCarouselKeyDown}
-              tabIndex={0}
-              role="region"
-              aria-label="Carousel navigation"
-            >
-              <div className="where-to__carousel-viewport overflow-hidden">
-                <div 
-                  ref={carouselTrackRef}
-                  className="where-to__carousel-track flex will-change-transform"
-                  style={{ transform: 'translateZ(0)' }}
-                >
-                  {/* Duplicate last 3 items at the beginning for infinite loop */}
-                  {activeCategoryItems.slice(-3).map((item, index) => (
-                    <div
-                      key={`prev-${item.id}`}
-                      className="where-to__carousel-item flex-shrink-0"
-                      style={{ 
-                        width: '85vw',
-                        marginRight: '2vw'
-                      }}
-                    >
-                      <div className="where-to__carousel-content">
-                        <div className="where-to__carousel-image">
-                          <Image
-                            src={item.image}
-                            alt={item.alt}
-                            width={364}
-                            height={418}
-                            className="w-full h-64 object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="where-to__carousel-text p-6">
-                          <h3 className="where-to__carousel-title text-xl font-medium text-where-active mb-3">
-                            {item.title}
-                          </h3>
-                          <p className="where-to__carousel-desc text-sm leading-relaxed text-gray-600">
-                            {item.description}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Main items */}
-                  {activeCategoryItems.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="where-to__carousel-item flex-shrink-0"
-                      style={{ 
-                        width: '85vw',
-                        marginRight: '2vw'
-                      }}
-                    >
-                      <div className="where-to__carousel-content">
-                        <div className="where-to__carousel-image">
-                          <Image
-                            src={item.image}
-                            alt={item.alt}
-                            width={364}
-                            height={418}
-                            className="w-full h-64 object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="where-to__carousel-text p-6">
-                          <h3 className="where-to__carousel-title text-xl font-medium text-where-active mb-3">
-                            {item.title}
-                          </h3>
-                          <p className="where-to__carousel-desc text-sm leading-relaxed text-gray-600">
-                            {item.description}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Duplicate first 3 items at the end for infinite loop */}
-                  {activeCategoryItems.slice(0, 3).map((item, index) => (
-                    <div
-                      key={`next-${item.id}`}
-                      className="where-to__carousel-item flex-shrink-0"
-                      style={{ 
-                        width: '85vw',
-                        marginRight: '2vw'
-                      }}
-                    >
-                      <div className="where-to__carousel-content">
-                        <div className="where-to__carousel-image">
-                          <Image
-                            src={item.image}
-                            alt={item.alt}
-                            width={364}
-                            height={418}
-                            className="w-full h-64 object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="where-to__carousel-text p-6">
-                          <h3 className="where-to__carousel-title text-xl font-medium text-where-active mb-3">
-                            {item.title}
-                          </h3>
-                          <p className="where-to__carousel-desc text-sm leading-relaxed text-gray-600">
-                            {item.description}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="where-to__carousel-progress mt-6 px-4">
-                <div 
-                  className="where-to__progress-bar w-full h-[1px] rounded-full overflow-hidden"
-                  style={{ 
-                    backgroundColor: 'rgba(138,108,96,.2)',
-                    '--tw-bg-opacity': '1'
-                  } as React.CSSProperties}
-                  role="progressbar"
-                  aria-valuenow={currentCarouselIndex + 1}
-                  aria-valuemin={1}
-                  aria-valuemax={activeCategoryItems.length}
-                  aria-label={`Item ${currentCarouselIndex + 1} of ${activeCategoryItems.length}`}
-                >
-                  <div 
-                    className="where-to__progress-fill h-full transition-all duration-300 ease-out"
-                    style={{ 
-                      width: `${((currentCarouselIndex + 1) / activeCategoryItems.length) * 100}%`,
-                      backgroundColor: 'rgba(138,108,96,var(--tw-bg-opacity))',
-                      '--tw-bg-opacity': '1'
-                    } as React.CSSProperties}
-                  />
-                </div>
-              </div>
-
-            </div>
+            <MobileCarousel items={activeCategoryItems} />
           ) : (
             // Desktop Layout
             venueData.map((category) => (
