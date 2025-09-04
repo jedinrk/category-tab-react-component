@@ -27,6 +27,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   const isTransitioning = useRef(false);
   const tabWidths = useRef<{ [key: string]: number }>({});
   const [isMobile, setIsMobile] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const activeCategory = venueData.find(category => category.id === activeTab);
   const activeCategoryItems = activeCategory?.items || [];
@@ -34,7 +35,11 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   // Mobile detection hook
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 767);
+      const mobile = window.innerWidth <= 767;
+      setIsMobile(mobile);
+      if (!isInitialized) {
+        setIsInitialized(true);
+      }
     };
     
     // Check on mount
@@ -46,7 +51,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     return () => {
       window.removeEventListener('resize', checkMobile);
     };
-  }, []);
+  }, [isInitialized]);
 
   // Calculate tab widths and positions
   const calculateTabWidths = useCallback(() => {
@@ -97,6 +102,13 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   // Handle tab activation with seamless infinite scroll animation
   const handleTabClick = useCallback((tabId: TabId) => {
     if (tabId === activeTab || isTransitioning.current) return;
+    
+    // Wait for initialization to complete before proceeding with animations
+    if (!isInitialized) {
+      // If not initialized yet, just update the state without animation
+      setActiveTab(tabId);
+      return;
+    }
     
     isTransitioning.current = true;
     const currentPanel = panelRefs.current[activeTab];
@@ -164,7 +176,10 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
     }
 
     // Animate content panels (desktop) or mobile carousel
-    if (isMobile && mobileCarouselRef.current) {
+    // Check if we're on mobile and the carousel ref is available
+    const shouldUseMobileAnimation = isMobile && mobileCarouselRef.current;
+    
+    if (shouldUseMobileAnimation) {
       // Mobile carousel animation
       if (prefersReducedMotion) {
         tl.to(mobileCarouselRef.current, { opacity: 0, duration: 0.14 }, 0)
@@ -177,7 +192,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           .set(mobileCarouselRef.current, { opacity: 0, y: 8 }, 0.28)
           .to(mobileCarouselRef.current, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, 0.32);
       }
-    } else if (currentPanel && nextPanel) {
+    } else if (!isMobile && currentPanel && nextPanel) {
       // Desktop panel animation
       if (prefersReducedMotion) {
         tl.to(currentPanel, { opacity: 0, duration: 0.14 }, 0)
@@ -189,12 +204,12 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           .to(nextPanel, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, 0.32);
       }
     } else {
-      // If no panels exist, just update the state after tab animation
+      // Fallback: just update the state after tab animation
       tl.call(() => {
         setActiveTab(tabId);
       }, [], prefersReducedMotion ? 0.2 : 0.6);
     }
-  }, [activeTab, calculateTabTranslation, setActiveTab]);
+  }, [activeTab, calculateTabTranslation, setActiveTab, isInitialized, isMobile]);
 
   // Animate tabs horizontally
   const animateTabsHorizontally = useCallback((targetTabId: TabId) => {
