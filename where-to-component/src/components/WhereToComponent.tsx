@@ -23,6 +23,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   const tabSliderRef = useRef<HTMLDivElement>(null);
   const tabViewportRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
+  const mobileCarouselRef = useRef<HTMLDivElement>(null);
   const isTransitioning = useRef(false);
   const tabWidths = useRef<{ [key: string]: number }>({});
   const [isMobile, setIsMobile] = useState(false);
@@ -162,8 +163,22 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       }, 0);
     }
 
-    // Animate content panels if they exist
-    if (currentPanel && nextPanel) {
+    // Animate content panels (desktop) or mobile carousel
+    if (isMobile && mobileCarouselRef.current) {
+      // Mobile carousel animation
+      if (prefersReducedMotion) {
+        tl.to(mobileCarouselRef.current, { opacity: 0, duration: 0.14 }, 0)
+          .call(() => setActiveTab(tabId), [], 0.14)
+          .set(mobileCarouselRef.current, { opacity: 0 }, 0.14)
+          .to(mobileCarouselRef.current, { opacity: 1, duration: 0.14 }, 0.14);
+      } else {
+        tl.to(mobileCarouselRef.current, { opacity: 0, y: -8, duration: 0.28, ease: "power2.out" }, 0)
+          .call(() => setActiveTab(tabId), [], 0.28)
+          .set(mobileCarouselRef.current, { opacity: 0, y: 8 }, 0.28)
+          .to(mobileCarouselRef.current, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, 0.32);
+      }
+    } else if (currentPanel && nextPanel) {
+      // Desktop panel animation
       if (prefersReducedMotion) {
         tl.to(currentPanel, { opacity: 0, duration: 0.14 }, 0)
           .set(nextPanel, { opacity: 0 }, 0.14)
@@ -174,7 +189,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           .to(nextPanel, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, 0.32);
       }
     } else {
-      // If panels don't exist, just update the state after tab animation
+      // If no panels exist, just update the state after tab animation
       tl.call(() => {
         setActiveTab(tabId);
       }, [], prefersReducedMotion ? 0.2 : 0.6);
@@ -497,7 +512,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           className="where-to__panels"
         >
           {isMobile ? (
-            <MobileCarousel items={activeCategoryItems} />
+            <MobileCarousel ref={mobileCarouselRef} items={activeCategoryItems} />
           ) : (
             // Desktop Layout
             venueData.map((category) => (

@@ -22,12 +22,12 @@ export type MobileCarouselProps = {
   className?: string;
 };
 
-export default function MobileCarousel({
+const MobileCarousel = React.forwardRef<HTMLDivElement, MobileCarouselProps>(({
   items,
   autoplayDelay = 4000,
   pauseOnHover = true,
   className,
-}: MobileCarouselProps) {
+}, ref) => {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
@@ -100,77 +100,86 @@ export default function MobileCarousel({
 
   return (
     <div
-      ref={containerRef}
+      ref={ref}
       className={cn('where-to__carousel-container', className)}
       tabIndex={0}
       role="region"
       aria-label="Carousel navigation"
       onKeyDown={handleKeyDown}
     >
-      <div className="where-to__carousel-viewport">
-        <Carousel
-          className="w-full"
-          opts={{ loop: true, align: 'start' }}
-          // Pass plugin only if not reduced motion
-          plugins={autoplay ? [autoplay] : []}
-          setApi={setApi}
-        >
-          <CarouselContent className="flex -mx-[1vw]">
-            {items.map((item) => (
-              <CarouselItem
-                key={item.id}
-                className="px-[1vw] basis-[85vw] shrink-0"
-              >
-                <div className="where-to__carousel-content">
-                  <div className="where-to__carousel-image">
-                    <Image
-                      src={item.image}
-                      alt={item.alt}
-                      width={364}
-                      height={418}
-                      className="w-full h-64 object-cover"
-                      loading="lazy"
-                    />
+      <div
+        ref={containerRef}
+        className="where-to__carousel-inner"
+      >
+        <div className="where-to__carousel-viewport">
+          <Carousel
+            className="w-full"
+            opts={{ loop: true, align: 'start' }}
+            // Pass plugin only if not reduced motion
+            plugins={autoplay ? [autoplay] : []}
+            setApi={setApi}
+          >
+            <CarouselContent className="flex -mx-[1vw]">
+              {items.map((item) => (
+                <CarouselItem
+                  key={item.id}
+                  className="px-[1vw] basis-[85vw] shrink-0"
+                >
+                  <div className="where-to__carousel-content">
+                    <div className="where-to__carousel-image">
+                      <Image
+                        src={item.image}
+                        alt={item.alt}
+                        width={364}
+                        height={418}
+                        className="w-full h-64 object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="where-to__carousel-text p-6">
+                      <h3 className="where-to__carousel-title text-xl font-medium text-where-active mb-3">
+                        {item.title}
+                      </h3>
+                      <p className="where-to__carousel-desc text-sm leading-relaxed text-gray-600">
+                        {item.description}
+                      </p>
+                    </div>
                   </div>
-                  <div className="where-to__carousel-text p-6">
-                    <h3 className="where-to__carousel-title text-xl font-medium text-where-active mb-3">
-                      {item.title}
-                    </h3>
-                    <p className="where-to__carousel-desc text-sm leading-relaxed text-gray-600">
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
-      </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+        </div>
 
-      {/* Progress Bar */}
-      <div className="where-to__carousel-progress mt-6 px-4">
-        <div
-          className="where-to__progress-bar w-full h-[1px] rounded-full overflow-hidden"
-          style={{
-            backgroundColor: 'rgba(138,108,96,.2)',
-            ['--tw-bg-opacity' as any]: '1',
-          }}
-          role="progressbar"
-          aria-valuenow={selectedIndex + 1}
-          aria-valuemin={1}
-          aria-valuemax={length}
-          aria-label={`Item ${selectedIndex + 1} of ${length}`}
-        >
+        {/* Progress Bar */}
+        <div className="where-to__carousel-progress mt-6 px-4">
           <div
-            className="where-to__progress-fill h-full transition-all duration-300 ease-out"
+            className="where-to__progress-bar w-full h-[1px] rounded-full overflow-hidden"
             style={{
-              width: `${progressPct}%`,
-              backgroundColor: 'rgba(138,108,96,var(--tw-bg-opacity))',
+              backgroundColor: 'rgba(138,108,96,.2)',
               ['--tw-bg-opacity' as any]: '1',
             }}
-          />
+            role="progressbar"
+            aria-valuenow={selectedIndex + 1}
+            aria-valuemin={1}
+            aria-valuemax={length}
+            aria-label={`Item ${selectedIndex + 1} of ${length}`}
+          >
+            <div
+              className="where-to__progress-fill h-full transition-all duration-300 ease-out"
+              style={{
+                width: `${progressPct}%`,
+                backgroundColor: 'rgba(138,108,96,var(--tw-bg-opacity))',
+                ['--tw-bg-opacity' as any]: '1',
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
   );
-}
+});
+
+MobileCarousel.displayName = 'MobileCarousel';
+
+export default MobileCarousel;
