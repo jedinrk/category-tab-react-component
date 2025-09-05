@@ -146,9 +146,8 @@
 
 /* Mobile-specific styles (≤767px) */
 @media (max-width: 767px) {
-  /* Mobile container padding */
+  /* Mobile container padding - removed to allow consistent alignment */
   .where-to--mobile {
-    padding-left: var(--where-side-padding-mobile);
     padding-right: var(--where-side-padding-mobile);
   }
   

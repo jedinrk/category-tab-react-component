@@ -389,15 +389,17 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
         '--where-gutter-m': '24px',
       } as React.CSSProperties}
     >
-      <div className={cn(
-        "where-to__inner",
-        !isMobile && "pl-12"
-      )}>
+      <div
+        className={cn(
+          "where-to__inner",
+          isMobile ? "pl-3" : "pl-12"
+        )}
+      >
       {/* Heading with 3rem left margin */}
       <div className="where-to__heading-container">
         <h2 id="where-to-heading" className="where-to__heading">
           <span className="where-to__heading-prefix block text-where-heading-m lg:text-where-heading-d font-light tracking-wide text-where-active uppercase leading-none">
-            WHERE TO
+        WHERE TO
           </span>
         </h2>
       </div>
@@ -406,14 +408,10 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       <div 
         ref={tabViewportRef}
         className="where-to__tab-viewport w-full"
-        style={!isMobile ? { 
+        style={{ 
           position: 'relative',
           marginLeft: '-3rem',
           paddingLeft: '3rem'
-        } : {
-          position: 'relative',
-          marginLeft: '-1rem',
-          paddingLeft: '1rem'
         }}
       >
         <nav 
@@ -422,79 +420,79 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           role="tablist" 
           aria-label="Where To Categories"
           style={{ 
-            position: 'relative'
+        position: 'relative'
           }}
         >
           {/* Duplicate tabs at the beginning for circular navigation */}
           {venueData.map((category) => (
-            <button
-              key={`prev-${category.id}`}
-              role="tab"
-              aria-selected={false}
-              aria-controls={`panel-${category.id}`}
-              tabIndex={-1}
-              className={cn(
-                "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
-                "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
-                "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
-                "focus:outline-none",
-                category.id === activeTab 
-                  ? "text-where-active hover:text-where-active" 
-                  : "text-where-inactive hover:text-where-active"
-              )}
-              onClick={() => handleTabClick(category.id as TabId)}
-            >
-              {category.label}
-            </button>
+        <button
+          key={`prev-${category.id}`}
+          role="tab"
+          aria-selected={false}
+          aria-controls={`panel-${category.id}`}
+          tabIndex={-1}
+          className={cn(
+            "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+            "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
+            "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
+            "focus:outline-none",
+            category.id === activeTab 
+          ? "text-where-active hover:text-where-active" 
+          : "text-where-inactive hover:text-where-active"
+          )}
+          onClick={() => handleTabClick(category.id as TabId)}
+        >
+          {category.label}
+        </button>
           ))}
           
           {/* Main tabs sequence */}
           {venueData.map((category) => (
-            <button
-              key={category.id}
-              ref={(el) => { tabRefs.current[category.id] = el; }}
-              role="tab"
-              id={`tab-${category.id}`}
-              aria-selected={category.id === activeTab}
-              aria-controls={`panel-${category.id}`}
-              tabIndex={category.id === activeTab ? 0 : -1}
-              className={cn(
-                "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
-                "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
-                "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
-                "focus:outline-none",
-                category.id === activeTab 
-                  ? "text-where-active hover:text-where-active" 
-                  : "text-where-inactive hover:text-where-active"
-              )}
-              onClick={() => handleTabClick(category.id as TabId)}
-              onKeyDown={(e) => handleKeyDown(e, category.id as TabId)}
-            >
-              {category.label}
-            </button>
+        <button
+          key={category.id}
+          ref={(el) => { tabRefs.current[category.id] = el; }}
+          role="tab"
+          id={`tab-${category.id}`}
+          aria-selected={category.id === activeTab}
+          aria-controls={`panel-${category.id}`}
+          tabIndex={category.id === activeTab ? 0 : -1}
+          className={cn(
+            "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+            "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
+            "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
+            "focus:outline-none",
+            category.id === activeTab 
+          ? "text-where-active hover:text-where-active" 
+          : "text-where-inactive hover:text-where-active"
+          )}
+          onClick={() => handleTabClick(category.id as TabId)}
+          onKeyDown={(e) => handleKeyDown(e, category.id as TabId)}
+        >
+          {category.label}
+        </button>
           ))}
           
           {/* Duplicate tabs at the end for circular navigation */}
           {venueData.map((category) => (
-            <button
-              key={`next-${category.id}`}
-              role="tab"
-              aria-selected={false}
-              aria-controls={`panel-${category.id}`}
-              tabIndex={-1}
-              className={cn(
-                "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
-                "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
-                "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
-                "focus:outline-none",
-                category.id === activeTab 
-                  ? "text-where-active hover:text-where-active" 
-                  : "text-where-inactive hover:text-where-active"
-              )}
-              onClick={() => handleTabClick(category.id as TabId)}
-            >
-              {category.label}
-            </button>
+        <button
+          key={`next-${category.id}`}
+          role="tab"
+          aria-selected={false}
+          aria-controls={`panel-${category.id}`}
+          tabIndex={-1}
+          className={cn(
+            "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+            "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
+            "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
+            "focus:outline-none",
+            category.id === activeTab 
+          ? "text-where-active hover:text-where-active" 
+          : "text-where-inactive hover:text-where-active"
+          )}
+          onClick={() => handleTabClick(category.id as TabId)}
+        >
+          {category.label}
+        </button>
           ))}
         </nav>
       </div>
@@ -508,60 +506,60 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           className="where-to__panels"
         >
           {isMobile ? (
-            <MobileCarousel ref={mobileCarouselRef} items={activeCategoryItems} />
+        <MobileCarousel ref={mobileCarouselRef} items={activeCategoryItems} />
           ) : (
-            // Desktop Layout
-            venueData.map((category) => (
-              <section
-                key={category.id}
-                id={`panel-${category.id}`}
-                role="tabpanel"
-                aria-labelledby={`tab-${category.id}`}
-                ref={(el) => { panelRefs.current[category.id] = el; }}
-                className={cn(
-                  "where-to__panel",
-                  category.id !== activeTab && "hidden"
-                )}
-              >
-                <ol className="where-to__list list-none p-0 m-0">
-                  {category.items.map((item, index) => (
-                    <li 
-                      key={item.id}
-                      className={cn(
-                        "where-to__row where-to__content-item",
-                        "grid gap-where-gutter-m lg:gap-where-gutter-d py-6 lg:py-8",
-                        "grid-cols-1 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_2fr]",
-                        "items-start",
-                        index > 0 && "border-t border-where-divider"
-                      )}
-                    >
-                      <div className="where-to__thumb where-to__content-image w-full md:w-40 lg:w-64 mb-4 md:mb-0">
-                        <Image
-                          src={item.image}
-                          alt={item.alt}
-                          width={260}
-                          height={336}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                      
-                      <h3 className="where-to__item-title text-where-title font-medium text-where-active mb-2 md:mb-0 md:mr-4 lg:mr-0">
-                        {item.title}
-                      </h3>
-                      
-                      <p className="where-to__item-desc leading-relaxed">
-                        {item.description}
-                      </p>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            ))
+        // Desktop Layout
+        venueData.map((category) => (
+          <section
+            key={category.id}
+            id={`panel-${category.id}`}
+            role="tabpanel"
+            aria-labelledby={`tab-${category.id}`}
+            ref={(el) => { panelRefs.current[category.id] = el; }}
+            className={cn(
+          "where-to__panel",
+          category.id !== activeTab && "hidden"
+            )}
+          >
+            <ol className="where-to__list list-none p-0 m-0">
+          {category.items.map((item, index) => (
+            <li 
+              key={item.id}
+              className={cn(
+            "where-to__row where-to__content-item",
+            "grid gap-where-gutter-m lg:gap-where-gutter-d py-6 lg:py-8",
+            "grid-cols-1 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_2fr]",
+            "items-start",
+            index > 0 && "border-t border-where-divider"
+              )}
+            >
+              <div className="where-to__thumb where-to__content-image w-full md:w-40 lg:w-64 mb-4 md:mb-0">
+            <Image
+              src={item.image}
+              alt={item.alt}
+              width={260}
+              height={336}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+              </div>
+              
+              <h3 className="where-to__item-title text-where-title font-medium text-where-active mb-2 md:mb-0 md:mr-4 lg:mr-0">
+            {item.title}
+              </h3>
+              
+              <p className="where-to__item-desc leading-relaxed">
+            {item.description}
+              </p>
+            </li>
+          ))}
+            </ol>
+          </section>
+        ))
           )}
         </div>
       </div>
-    </div>
+        </div>
     </section>
   );
 });
