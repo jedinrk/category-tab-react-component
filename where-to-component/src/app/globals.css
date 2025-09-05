@@ -160,12 +160,6 @@
     letter-spacing: 1.5px;
   }
   
-  /* Mobile tab container with horizontal scroll */
-  .where-to--mobile .where-to__tab-viewport {
-    margin-left: -1.5rem;
-    padding-left: var(--where-side-padding-mobile);
-    overflow: hidden;
-  }
   
   .where-to--mobile .where-to__tab-slider {
     padding-right: var(--where-side-padding-mobile);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback, useImperativeHandle, forwardRef, useState } from 'react';
+import { useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import Image from 'next/image';
 import { gsap } from 'gsap';
 import { useWhereToStore } from '@/lib/store';
@@ -8,6 +8,7 @@ import { venueData } from '@/data/venues';
 import { TabId } from '@/types';
 import { cn } from '@/lib/utils';
 import MobileCarousel from '@/components/MobileCarousel';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 // Define the ref interface for external access
 export interface WhereToComponentRef {
@@ -26,32 +27,12 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   const mobileCarouselRef = useRef<HTMLDivElement>(null);
   const isTransitioning = useRef(false);
   const tabWidths = useRef<{ [key: string]: number }>({});
-  const [isMobile, setIsMobile] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Use the new useMediaQuery hook for responsive detection
+  const { isMobile } = useMediaQuery();
 
   const activeCategory = venueData.find(category => category.id === activeTab);
   const activeCategoryItems = activeCategory?.items || [];
-
-  // Mobile detection hook
-  useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth <= 767;
-      setIsMobile(mobile);
-      if (!isInitialized) {
-        setIsInitialized(true);
-      }
-    };
-    
-    // Check on mount
-    checkMobile();
-    
-    // Add resize listener
-    window.addEventListener('resize', checkMobile);
-    
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-    };
-  }, [isInitialized]);
 
   // Calculate tab widths and positions
   const calculateTabWidths = useCallback(() => {
@@ -102,13 +83,6 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   // Handle tab activation with seamless infinite scroll animation
   const handleTabClick = useCallback((tabId: TabId) => {
     if (tabId === activeTab || isTransitioning.current) return;
-    
-    // Wait for initialization to complete before proceeding with animations
-    if (!isInitialized) {
-      // If not initialized yet, just update the state without animation
-      setActiveTab(tabId);
-      return;
-    }
     
     isTransitioning.current = true;
     const currentPanel = panelRefs.current[activeTab];
@@ -209,7 +183,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
         setActiveTab(tabId);
       }, [], prefersReducedMotion ? 0.2 : 0.6);
     }
-  }, [activeTab, calculateTabTranslation, setActiveTab, isInitialized, isMobile]);
+  }, [activeTab, calculateTabTranslation, setActiveTab, isMobile]);
 
   // Animate tabs horizontally
   const animateTabsHorizontally = useCallback((targetTabId: TabId) => {
@@ -427,12 +401,12 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
         className="where-to__tab-viewport w-full"
         style={!isMobile ? { 
           position: 'relative',
-          overflow: 'hidden',
           marginLeft: '-3rem',
           paddingLeft: '3rem'
         } : {
           position: 'relative',
-          overflow: 'hidden'
+          marginLeft: '-1rem',
+          paddingLeft: '1rem'
         }}
       >
         <nav 
