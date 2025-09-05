@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { useRef, useEffect, useCallback, useImperativeHandle, forwardRef, useState } from 'react';
 import Image from 'next/image';
 import { gsap } from 'gsap';
 import { useWhereToStore } from '@/lib/store';
@@ -30,6 +30,13 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   
   // Use the new useMediaQuery hook for responsive detection
   const { isMobile } = useMediaQuery();
+  
+  // Track if component has mounted to prevent hydration mismatch
+  const [hasMounted, setHasMounted] = useState(false);
+  
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const activeCategory = venueData.find(category => category.id === activeTab);
   const activeCategoryItems = activeCategory?.items || [];

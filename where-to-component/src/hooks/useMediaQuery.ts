@@ -45,11 +45,14 @@ export function useMediaQuery(breakpoint: BreakpointKey): boolean;
  * const isLargeScreen = useMediaQuery('(min-width: 1440px)');
  */
 export function useMediaQuery(query?: string | BreakpointKey) {
-  // SSR-safe initialization
+  // Track if component has mounted to prevent hydration mismatch
+  const [hasMounted, setHasMounted] = useState(false);
+
+  // SSR-safe initialization - always return false during SSR
   const getInitialValue = useCallback((mediaQuery: string): boolean => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined' || !hasMounted) return false;
     return window.matchMedia(mediaQuery).matches;
-  }, []);
+  }, [hasMounted]);
 
   // If no query provided, return all device types
   if (!query) {
@@ -58,6 +61,9 @@ export function useMediaQuery(query?: string | BreakpointKey) {
     const [isDesktop, setIsDesktop] = useState(() => getInitialValue(BREAKPOINTS.desktop));
 
     useEffect(() => {
+      // Set mounted flag to true after first render
+      setHasMounted(true);
+      
       const mobileQuery = window.matchMedia(BREAKPOINTS.mobile);
       const tabletQuery = window.matchMedia(BREAKPOINTS.tablet);
       const desktopQuery = window.matchMedia(BREAKPOINTS.desktop);
@@ -74,7 +80,7 @@ export function useMediaQuery(query?: string | BreakpointKey) {
         }, 100);
       };
 
-      // Set initial values
+      // Set initial values after mount
       updateValues();
 
       // Add listeners
@@ -98,6 +104,9 @@ export function useMediaQuery(query?: string | BreakpointKey) {
   const [matches, setMatches] = useState(() => getInitialValue(mediaQuery));
 
   useEffect(() => {
+    // Set mounted flag to true after first render
+    setHasMounted(true);
+    
     const mq = window.matchMedia(mediaQuery);
 
     // Update function with debouncing
@@ -110,7 +119,7 @@ export function useMediaQuery(query?: string | BreakpointKey) {
       }, 100);
     };
 
-    // Set initial value
+    // Set initial value after mount
     updateMatch();
 
     // Add listener
