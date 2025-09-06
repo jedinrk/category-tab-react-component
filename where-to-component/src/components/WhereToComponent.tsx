@@ -370,7 +370,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   return (
     <section 
       className={cn(
-        "where-to py-12 lg:py-16",
+        "where-to overflow-hidden py-12 lg:py-16",
         isMobile && "where-to--mobile"
       )}
       aria-labelledby="where-to-heading"
