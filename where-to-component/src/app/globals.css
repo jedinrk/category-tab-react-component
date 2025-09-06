@@ -72,10 +72,14 @@
   --where-divider-mobile: rgba(139, 111, 71, 0.2);
 }
 
-/* BwDiagrid font for headings and tabs */
-.where-to__heading,
-.where-to__tab {
+/* BwDiagrid font for headings */
+.where-to__heading {
   font-family: 'BwDiagrid', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Theinhardt-Medium font for tabs */
+.where-to__tab {
+  font-family: 'Theinhardt-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* Responsive grid areas for tablet layout */
@@ -191,7 +195,7 @@
     border-color: var(--where-divider-mobile);
   }
   
-  /* Mobile Carousel Styles */
+  /* Mobile Carousel Styles - Updated to match 53w53.com specifications */
   .where-to--mobile .where-to__carousel-container {
     padding: 0;
     margin: 0 calc(-1 * var(--where-side-padding-mobile));
@@ -250,7 +254,7 @@
     font-family: 'BradfordLLWeb', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.25rem;
     font-weight: 500;
-    color: var(--where-color-active);
+    color: #8B6F47;
     margin-bottom: 12px;
     line-height: 1.3;
   }
@@ -261,6 +265,23 @@
     line-height: 1.5;
     color: #666;
     flex: 1;
+  }
+
+  /* Global carousel styles for mobile */
+  .where-to__carousel-title {
+    font-family: 'Theinhardt-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 1.2rem !important;
+    color: #8B6F47 !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+  }
+  
+  .where-to__carousel-desc {
+    font-family: 'BradfordLLWeb', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 1.2rem !important;
+    color: #8a6c60 !important;
+    line-height: 1.2 !important;
+    font-weight: 500 !important;
   }
   
   

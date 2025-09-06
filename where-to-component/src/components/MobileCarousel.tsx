@@ -132,15 +132,15 @@ const MobileCarousel = React.forwardRef<HTMLDivElement, MobileCarouselProps>(({
                         alt={item.alt}
                         width={364}
                         height={418}
-                        className="w-full h-64 object-cover"
+                        className="w-full h-[415px] object-cover"
                         loading="lazy"
                       />
                     </div>
-                    <div className="where-to__carousel-text p-6">
-                      <h3 className="where-to__carousel-title text-xl font-medium text-where-active mb-3">
+                    <div className="where-to__carousel-text mt-6">
+                      <h3 className="where-to__carousel-title mb-3 uppercase">
                         {item.title}
                       </h3>
-                      <p className="where-to__carousel-desc text-sm leading-relaxed text-gray-600">
+                      <p className="where-to__carousel-desc">
                         {item.description}
                       </p>
                     </div>
