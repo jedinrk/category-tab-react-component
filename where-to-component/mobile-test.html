@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Test - Where To Component</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-container {
+            max-width: 375px; /* iPhone width */
+            margin: 0 auto;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 800px;
+            border: none;
+        }
+        .info {
+            background: #f0f0f0;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mobile Viewport Test</h1>
+    <p>This simulates a mobile device viewport (375px wide) to test for desktop-first flash issues.</p>
+    
+    <div class="test-container">
+        <div class="info">Mobile Simulation (375px width)</div>
+        <iframe src="http://localhost:3001" title="Mobile Test"></iframe>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <h2>What to look for:</h2>
+        <ul>
+            <li>✅ No desktop layout should flash before mobile layout</li>
+            <li>✅ Mobile carousel should appear immediately</li>
+            <li>✅ No hydration mismatch errors in console</li>
+            <li>✅ Smooth loading without layout shifts</li>
+        </ul>
+    </div>
+</body>
+</html>

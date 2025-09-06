@@ -28,15 +28,8 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
   const isTransitioning = useRef(false);
   const tabWidths = useRef<{ [key: string]: number }>({});
   
-  // Use the new useMediaQuery hook for responsive detection
-  const { isMobile } = useMediaQuery();
-  
-  // Track if component has mounted to prevent hydration mismatch
-  const [hasMounted, setHasMounted] = useState(false);
-  
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
+  // Use the improved useMediaQuery hook for responsive detection
+  const { isMobile, isHydrated } = useMediaQuery();
 
   const activeCategory = venueData.find(category => category.id === activeTab);
   const activeCategoryItems = activeCategory?.items || [];
@@ -156,39 +149,43 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       }, 0);
     }
 
-    // Animate content panels (desktop) or mobile carousel
-    // Check if we're on mobile and the carousel ref is available
-    const shouldUseMobileAnimation = isMobile && mobileCarouselRef.current;
-    
-    if (shouldUseMobileAnimation) {
-      // Mobile carousel animation
-      if (prefersReducedMotion) {
-        tl.to(mobileCarouselRef.current, { opacity: 0, duration: 0.14 }, 0)
-          .call(() => setActiveTab(tabId), [], 0.14)
-          .set(mobileCarouselRef.current, { opacity: 0 }, 0.14)
-          .to(mobileCarouselRef.current, { opacity: 1, duration: 0.14 }, 0.14);
+    // Animate content based on current device type (only if hydrated)
+    if (isHydrated) {
+      if (isMobile && mobileCarouselRef.current) {
+        // Mobile carousel animation
+        if (prefersReducedMotion) {
+          tl.to(mobileCarouselRef.current, { opacity: 0, duration: 0.14 }, 0)
+            .call(() => setActiveTab(tabId), [], 0.14)
+            .set(mobileCarouselRef.current, { opacity: 0 }, 0.14)
+            .to(mobileCarouselRef.current, { opacity: 1, duration: 0.14 }, 0.14);
+        } else {
+          tl.to(mobileCarouselRef.current, { opacity: 0, y: -8, duration: 0.28, ease: "power2.out" }, 0)
+            .call(() => setActiveTab(tabId), [], 0.28)
+            .set(mobileCarouselRef.current, { opacity: 0, y: 8 }, 0.28)
+            .to(mobileCarouselRef.current, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, 0.32);
+        }
+      } else if (!isMobile && currentPanel && nextPanel) {
+        // Desktop panel animation
+        if (prefersReducedMotion) {
+          tl.to(currentPanel, { opacity: 0, duration: 0.14 }, 0)
+            .set(nextPanel, { opacity: 0 }, 0.14)
+            .to(nextPanel, { opacity: 1, duration: 0.14 }, 0.14);
+        } else {
+          tl.to(currentPanel, { opacity: 0, y: -8, duration: 0.28, ease: "power2.out" }, 0)
+            .set(nextPanel, { opacity: 0, y: 8 }, 0.28)
+            .to(nextPanel, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, 0.32);
+        }
       } else {
-        tl.to(mobileCarouselRef.current, { opacity: 0, y: -8, duration: 0.28, ease: "power2.out" }, 0)
-          .call(() => setActiveTab(tabId), [], 0.28)
-          .set(mobileCarouselRef.current, { opacity: 0, y: 8 }, 0.28)
-          .to(mobileCarouselRef.current, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, 0.32);
-      }
-    } else if (!isMobile && currentPanel && nextPanel) {
-      // Desktop panel animation
-      if (prefersReducedMotion) {
-        tl.to(currentPanel, { opacity: 0, duration: 0.14 }, 0)
-          .set(nextPanel, { opacity: 0 }, 0.14)
-          .to(nextPanel, { opacity: 1, duration: 0.14 }, 0.14);
-      } else {
-        tl.to(currentPanel, { opacity: 0, y: -8, duration: 0.28, ease: "power2.out" }, 0)
-          .set(nextPanel, { opacity: 0, y: 8 }, 0.28)
-          .to(nextPanel, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, 0.32);
+        // Fallback: just update the state after tab animation
+        tl.call(() => {
+          setActiveTab(tabId);
+        }, [], prefersReducedMotion ? 0.2 : 0.6);
       }
     } else {
-      // Fallback: just update the state after tab animation
+      // If not hydrated yet, just update state without animation
       tl.call(() => {
         setActiveTab(tabId);
-      }, [], prefersReducedMotion ? 0.2 : 0.6);
+      }, [], 0);
     }
   }, [activeTab, calculateTabTranslation, setActiveTab, isMobile]);
 
@@ -369,10 +366,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
 
   return (
     <section 
-      className={cn(
-        "where-to overflow-hidden py-12 lg:py-16",
-        isMobile && "where-to--mobile"
-      )}
+      className="where-to overflow-hidden py-12 lg:py-16"
       aria-labelledby="where-to-heading"
       style={{
         '--where-color-active': '#8B4513',
@@ -389,12 +383,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
         '--where-gutter-m': '24px',
       } as React.CSSProperties}
     >
-      <div
-        className={cn(
-          "where-to__inner",
-          isMobile ? "pl-3" : "pl-12"
-        )}
-      >
+      <div className="where-to__inner pl-3 md:pl-12">
       {/* Heading with 3rem left margin */}
       <div className="where-to__heading-container">
         <h2 id="where-to-heading" className="where-to__heading">
@@ -407,7 +396,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
       {/* Tab Viewport Container - Full width, extends to right edge */}
       <div 
         ref={tabViewportRef}
-        className="where-to__tab-viewport w-full"
+        className="where-to__tab-viewport w-full mt-14 md:mt-0"
         style={{ 
           position: 'relative',
           marginLeft: '-3rem',
@@ -432,7 +421,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           aria-controls={`panel-${category.id}`}
           tabIndex={-1}
           className={cn(
-            "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+            "where-to__tab text-where-heading-m lg:text-where-heading-d font-medium tracking-wide uppercase leading-none flex-shrink-0",
             "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
             "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
             "focus:outline-none",
@@ -457,7 +446,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           aria-controls={`panel-${category.id}`}
           tabIndex={category.id === activeTab ? 0 : -1}
           className={cn(
-            "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+            "where-to__tab text-where-heading-m lg:text-where-heading-d font-medium tracking-wide uppercase leading-none flex-shrink-0",
             "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
             "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
             "focus:outline-none",
@@ -481,7 +470,7 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
           aria-controls={`panel-${category.id}`}
           tabIndex={-1}
           className={cn(
-            "where-to__tab text-where-heading-m lg:text-where-heading-d font-light tracking-wide uppercase leading-none flex-shrink-0",
+            "where-to__tab text-where-heading-m lg:text-where-heading-d font-medium tracking-wide uppercase leading-none flex-shrink-0",
             "bg-transparent border-0 p-0 cursor-pointer transition-colors duration-200",
             "mr-8 md:mr-10 lg:mr-[60px] whitespace-nowrap",
             "focus:outline-none",
@@ -499,64 +488,67 @@ const WhereToComponent = forwardRef<WhereToComponentRef>((props, ref) => {
 
       {/* Divider and content with 3rem left margin */}
       <div className="where-to__content-container">
-        <hr className="where-to__divider border-0 border-t border-where-divider mt-20 sm:mt-120" />
+        <hr className="where-to__divider border-0 border-t border-where-divider mt-4 md:mt-20" />
 
         <div 
           ref={containerRef}
           className="where-to__panels"
         >
-          {isMobile ? (
-        <MobileCarousel ref={mobileCarouselRef} items={activeCategoryItems} />
-          ) : (
-        // Desktop Layout
-        venueData.map((category) => (
-          <section
-            key={category.id}
-            id={`panel-${category.id}`}
-            role="tabpanel"
-            aria-labelledby={`tab-${category.id}`}
-            ref={(el) => { panelRefs.current[category.id] = el; }}
-            className={cn(
-          "where-to__panel",
-          category.id !== activeTab && "hidden"
-            )}
-          >
-            <ol className="where-to__list list-none p-0 m-0">
-          {category.items.map((item, index) => (
-            <li 
-              key={item.id}
-              className={cn(
-            "where-to__row where-to__content-item",
-            "grid gap-where-gutter-m lg:gap-where-gutter-d py-6 lg:py-8",
-            "grid-cols-1 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_2fr]",
-            "items-start",
-            index > 0 && "border-t border-where-divider"
-              )}
-            >
-              <div className="where-to__thumb where-to__content-image w-full md:w-40 lg:w-64 mb-4 md:mb-0">
-            <Image
-              src={item.image}
-              alt={item.alt}
-              width={260}
-              height={336}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-              </div>
-              
-              <h3 className="where-to__item-title text-where-title font-medium text-where-active mb-2 md:mb-0 md:mr-4 lg:mr-0">
-            {item.title}
-              </h3>
-              
-              <p className="where-to__item-desc leading-relaxed">
-            {item.description}
-              </p>
-            </li>
-          ))}
-            </ol>
-          </section>
-        ))
-          )}
+          {/* Mobile Carousel - hidden on desktop via CSS, always rendered */}
+          <div className="where-to__mobile-content md:hidden mt-14">
+            <MobileCarousel ref={mobileCarouselRef} items={activeCategoryItems} />
+          </div>
+          
+          {/* Desktop Layout - hidden on mobile via CSS, always rendered */}
+          <div className="where-to__desktop-content hidden md:block">
+            {venueData.map((category) => (
+              <section
+                key={category.id}
+                id={`panel-${category.id}`}
+                role="tabpanel"
+                aria-labelledby={`tab-${category.id}`}
+                ref={(el) => { panelRefs.current[category.id] = el; }}
+                className={cn(
+                  "where-to__panel",
+                  category.id !== activeTab && "hidden"
+                )}
+              >
+                <ol className="where-to__list list-none p-0 m-0">
+                  {category.items.map((item, index) => (
+                    <li 
+                      key={item.id}
+                      className={cn(
+                        "where-to__row where-to__content-item",
+                        "grid gap-where-gutter-m lg:gap-where-gutter-d py-6 lg:py-8",
+                        "grid-cols-1 md:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_2fr]",
+                        "items-start",
+                        index > 0 && "border-t border-where-divider"
+                      )}
+                    >
+                      <div className="where-to__thumb where-to__content-image w-full md:w-40 lg:w-64 mb-4 md:mb-0">
+                        <Image
+                          src={item.image}
+                          alt={item.alt}
+                          width={260}
+                          height={336}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                      
+                      <h3 className="where-to__item-title text-where-title font-medium text-where-active mb-2 md:mb-0 md:mr-4 lg:mr-0">
+                        {item.title}
+                      </h3>
+                      
+                      <p className="where-to__item-desc leading-relaxed">
+                        {item.description}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            ))}
+          </div>
         </div>
       </div>
         </div>

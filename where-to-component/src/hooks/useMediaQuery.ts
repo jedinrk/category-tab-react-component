@@ -19,22 +19,23 @@ export type BreakpointKey = keyof typeof BREAKPOINTS;
 
 // Hook overloads for different usage patterns
 export function useMediaQuery(): {
-  isMobile: boolean;
-  isTablet: boolean;
-  isDesktop: boolean;
+  isMobile: boolean | null;
+  isTablet: boolean | null;
+  isDesktop: boolean | null;
+  isHydrated: boolean;
 };
-export function useMediaQuery(query: string): boolean;
-export function useMediaQuery(breakpoint: BreakpointKey): boolean;
+export function useMediaQuery(query: string): boolean | null;
+export function useMediaQuery(breakpoint: BreakpointKey): boolean | null;
 
 /**
- * Custom hook for responsive media queries with SSR support
+ * SSR-safe custom hook for responsive media queries
  * 
  * @param query - Media query string or predefined breakpoint key
- * @returns Boolean indicating if the media query matches, or object with device types
+ * @returns Boolean indicating if the media query matches (null during SSR), or object with device types
  * 
  * @example
  * // Get all device types
- * const { isMobile, isTablet, isDesktop } = useMediaQuery();
+ * const { isMobile, isTablet, isDesktop, isHydrated } = useMediaQuery();
  * 
  * @example
  * // Use predefined breakpoint
@@ -45,24 +46,26 @@ export function useMediaQuery(breakpoint: BreakpointKey): boolean;
  * const isLargeScreen = useMediaQuery('(min-width: 1440px)');
  */
 export function useMediaQuery(query?: string | BreakpointKey) {
-  // Track if component has mounted to prevent hydration mismatch
-  const [hasMounted, setHasMounted] = useState(false);
+  // Track if component has hydrated to prevent hydration mismatch
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // SSR-safe initialization - always return false during SSR
-  const getInitialValue = useCallback((mediaQuery: string): boolean => {
-    if (typeof window === 'undefined' || !hasMounted) return false;
+  // SSR-safe initialization - always return null during SSR
+  const getInitialValue = useCallback((mediaQuery: string): boolean | null => {
+    if (typeof window === 'undefined' || !isHydrated) return null;
     return window.matchMedia(mediaQuery).matches;
-  }, [hasMounted]);
+  }, [isHydrated]);
 
   // If no query provided, return all device types
   if (!query) {
-    const [isMobile, setIsMobile] = useState(() => getInitialValue(BREAKPOINTS.mobile));
-    const [isTablet, setIsTablet] = useState(() => getInitialValue(BREAKPOINTS.tablet));
-    const [isDesktop, setIsDesktop] = useState(() => getInitialValue(BREAKPOINTS.desktop));
+    const [isMobile, setIsMobile] = useState<boolean | null>(() => getInitialValue(BREAKPOINTS.mobile));
+    const [isTablet, setIsTablet] = useState<boolean | null>(() => getInitialValue(BREAKPOINTS.tablet));
+    const [isDesktop, setIsDesktop] = useState<boolean | null>(() => getInitialValue(BREAKPOINTS.desktop));
 
     useEffect(() => {
-      // Set mounted flag to true after first render
-      setHasMounted(true);
+      // Set hydrated flag to true after first render
+      setIsHydrated(true);
+      
+      if (typeof window === 'undefined') return;
       
       const mobileQuery = window.matchMedia(BREAKPOINTS.mobile);
       const tabletQuery = window.matchMedia(BREAKPOINTS.tablet);
@@ -77,10 +80,10 @@ export function useMediaQuery(query?: string | BreakpointKey) {
           setIsMobile(mobileQuery.matches);
           setIsTablet(tabletQuery.matches);
           setIsDesktop(desktopQuery.matches);
-        }, 100);
+        }, 16); // Reduced debounce for faster response
       };
 
-      // Set initial values after mount
+      // Set initial values immediately after hydration
       updateValues();
 
       // Add listeners
@@ -96,16 +99,18 @@ export function useMediaQuery(query?: string | BreakpointKey) {
       };
     }, []);
 
-    return { isMobile, isTablet, isDesktop };
+    return { isMobile, isTablet, isDesktop, isHydrated };
   }
 
   // Single query mode
   const mediaQuery = query in BREAKPOINTS ? BREAKPOINTS[query as BreakpointKey] : query;
-  const [matches, setMatches] = useState(() => getInitialValue(mediaQuery));
+  const [matches, setMatches] = useState<boolean | null>(() => getInitialValue(mediaQuery));
 
   useEffect(() => {
-    // Set mounted flag to true after first render
-    setHasMounted(true);
+    // Set hydrated flag to true after first render
+    setIsHydrated(true);
+    
+    if (typeof window === 'undefined') return;
     
     const mq = window.matchMedia(mediaQuery);
 
@@ -116,10 +121,10 @@ export function useMediaQuery(query?: string | BreakpointKey) {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         setMatches(mq.matches);
-      }, 100);
+      }, 16); // Reduced debounce for faster response
     };
 
-    // Set initial value after mount
+    // Set initial value immediately after hydration
     updateMatch();
 
     // Add listener
